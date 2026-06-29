@@ -1,9 +1,12 @@
 import 'package:dts_customer/main.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('App cliente arranca', (tester) async {
-    await tester.pumpWidget(const DtsCustomerApp());
-    expect(find.text('DTS Cliente — iniciar con /fase-4'), findsOneWidget);
+  testWidgets('app boots with provider scope', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: DtsCustomerApp()));
+    await tester.pump();
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }
