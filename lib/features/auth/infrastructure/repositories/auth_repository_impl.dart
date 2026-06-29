@@ -2,6 +2,7 @@ import '../../../../core/network/token_storage.dart';
 import '../../domain/entities/auth_session.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
+import '../models/auth_tokens_dto.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
@@ -22,6 +23,32 @@ class AuthRepositoryImpl implements AuthRepository {
       username: username,
       password: password,
     );
+    return _persistSession(dto);
+  }
+
+  @override
+  Future<AuthSession> register({
+    required String username,
+    required String email,
+    required String password,
+    required String phone,
+  }) async {
+    await _remoteDataSource.register(
+      username: username,
+      email: email,
+      password: password,
+      phone: phone,
+    );
+    return login(username: username, password: password);
+  }
+
+  @override
+  Future<AuthSession> signInWithGoogle({required String idToken}) async {
+    final dto = await _remoteDataSource.signInWithGoogle(idToken: idToken);
+    return _persistSession(dto);
+  }
+
+  Future<AuthSession> _persistSession(AuthTokensDto dto) async {
     final session = dto.toSession();
     await _tokenStorage.saveTokens(
       access: session.accessToken,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/providers.dart';
+import '../../application/post_auth_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -25,33 +26,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
+  Future<void> _afterAuth(Future<void> Function() action) async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      await ref.read(loginUseCaseProvider).call(
-            username: _usernameController.text.trim(),
-            password: _passwordController.text,
-          );
-      ref.invalidate(authStateProvider);
+      await action();
+      await ref.read(postAuthServiceProvider).complete(ref);
     } catch (_) {
       if (mounted) {
-        setState(() {
-          _error = 'Credenciales inválidas';
-          _isLoading = false;
-        });
+        setState(() => _error = 'No se pudo iniciar sesión');
       }
       return;
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
 
-    if (!mounted) return;
-    context.go('/stores');
-    setState(() => _isLoading = false);
+    if (mounted) context.go('/stores');
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    await _afterAuth(
+      () => ref.read(loginUseCaseProvider).call(
+            username: _usernameController.text.trim(),
+            password: _passwordController.text,
+          ),
+    );
+  }
+
+  Future<void> _signInWithGoogle() async {
+    await _afterAuth(() => ref.read(googleSignInUseCaseProvider).call());
   }
 
   @override
@@ -83,7 +90,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ],
               const SizedBox(height: 24),
               FilledButton(
@@ -96,6 +106,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Text('Entrar'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                key: const Key('login_google'),
+                onPressed: _isLoading ? null : _signInWithGoogle,
+                icon: const Icon(Icons.login),
+                label: const Text('Continuar con Google'),
+              ),
+              TextButton(
+                onPressed: () => context.go('/register'),
+                child: const Text('Crear cuenta'),
               ),
             ],
           ),

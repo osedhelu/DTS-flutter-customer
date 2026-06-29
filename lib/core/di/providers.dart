@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/firebase/firebase_service.dart';
+import '../../features/auth/domain/usecases/google_sign_in_usecase.dart';
 import '../../features/auth/domain/usecases/login_usecase.dart';
+import '../../features/auth/domain/usecases/register_usecase.dart';
 import '../../features/cart/application/providers/cart_providers.dart';
 import '../../features/catalog/application/providers/catalog_providers.dart';
 import '../../features/checkout/domain/usecases/create_order_usecase.dart';
@@ -19,6 +21,14 @@ export 'repository_providers.dart';
 
 final loginUseCaseProvider = Provider<LoginUseCase>((ref) {
   return LoginUseCase(ref.watch(authRepositoryProvider));
+});
+
+final registerUseCaseProvider = Provider<RegisterUseCase>((ref) {
+  return RegisterUseCase(ref.watch(authRepositoryProvider));
+});
+
+final googleSignInUseCaseProvider = Provider<GoogleSignInUseCase>((ref) {
+  return GoogleSignInUseCase(ref.watch(authRepositoryProvider));
 });
 
 final authStateProvider = FutureProvider<bool>((ref) async {

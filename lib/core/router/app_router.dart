@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/catalog/domain/entities/product.dart';
 import '../../features/catalog/presentation/screens/catalog_screen.dart';
 import '../../features/catalog/presentation/screens/product_detail_screen.dart';
@@ -39,14 +40,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final auth = ref.read(authStateProvider);
       final isLogin = state.matchedLocation == '/login';
+      final isRegister = state.matchedLocation == '/register';
+      final isAuthRoute = isLogin || isRegister;
 
       return auth.when(
         data: (isAuthenticated) {
-          if (!isAuthenticated && !isLogin) return '/login';
-          if (isAuthenticated && isLogin) return '/stores';
+          if (!isAuthenticated && !isAuthRoute) return '/login';
+          if (isAuthenticated && isAuthRoute) return '/stores';
           return null;
         },
-        loading: () => isLogin ? null : null,
+        loading: () => isAuthRoute ? null : null,
         error: (_, __) => '/login',
       );
     },
@@ -54,6 +57,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/stores',

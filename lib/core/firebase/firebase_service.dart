@@ -1,8 +1,8 @@
-import 'dart:async';
-
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+
+import '../../firebase_options.dart';
 
 typedef FirebaseBackgroundHandler = Future<void> Function(RemoteMessage message);
 
@@ -23,21 +23,15 @@ class FirebaseServiceImpl implements FirebaseService {
     FirebaseMessaging? messaging,
     Future<void> Function()? initializeApp,
   })  : _messaging = messaging ?? FirebaseMessaging.instance,
-        _initializeApp = initializeApp ?? _defaultInitialize;
+        _initializeApp = initializeApp ??
+            (() async {
+              await Firebase.initializeApp(
+                options: DefaultFirebaseOptions.currentPlatform,
+              );
+            });
 
   final FirebaseMessaging _messaging;
   final Future<void> Function() _initializeApp;
-
-  static Future<void> _defaultInitialize() {
-    return Firebase.initializeApp(options: _defaultOptions);
-  }
-
-  static const FirebaseOptions _defaultOptions = FirebaseOptions(
-    apiKey: 'test-api-key',
-    appId: '1:000000000000:android:0000000000000000000000',
-    messagingSenderId: '000000000000',
-    projectId: 'dts-customer-test',
-  );
 
   @override
   Future<void> initialize() async {
