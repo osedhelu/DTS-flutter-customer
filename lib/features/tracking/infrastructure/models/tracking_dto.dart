@@ -9,6 +9,7 @@ class TrackingDto {
     this.destinationLatitude,
     this.destinationLongitude,
     this.updatedAt,
+    this.isLive = false,
   });
 
   final int orderId;
@@ -18,13 +19,28 @@ class TrackingDto {
   final double? destinationLatitude;
   final double? destinationLongitude;
   final DateTime? updatedAt;
+  final bool isLive;
 
   factory TrackingDto.fromJson(Map<String, dynamic> json) {
+    double? driverLat = _toDouble(json['driver_latitude'] ?? json['latitude']);
+    double? driverLng = _toDouble(json['driver_longitude'] ?? json['longitude']);
+
+    final points = json['points'];
+    if ((driverLat == null || driverLng == null) && points is List && points.isNotEmpty) {
+      final last = points.last;
+      if (last is Map<String, dynamic>) {
+        driverLat ??= _toDouble(last['latitude']);
+        driverLng ??= _toDouble(last['longitude']);
+      }
+    }
+
+    final status = (json['order_status'] ?? json['status'] ?? '') as String;
+
     return TrackingDto(
-      orderId: json['order_id'] as int? ?? json['id'] as int,
-      status: json['status'] as String,
-      driverLatitude: _toDouble(json['driver_latitude'] ?? json['latitude']),
-      driverLongitude: _toDouble(json['driver_longitude'] ?? json['longitude']),
+      orderId: json['order_id'] as int? ?? json['id'] as int? ?? 0,
+      status: status,
+      driverLatitude: driverLat,
+      driverLongitude: driverLng,
       destinationLatitude: _toDouble(
         json['destination_latitude'] ?? json['service_latitude'],
       ),
@@ -34,12 +50,14 @@ class TrackingDto {
       updatedAt: json['updated_at'] != null
           ? DateTime.tryParse(json['updated_at'] as String)
           : null,
+      isLive: json['is_live'] as bool? ??
+          const {'driver_assigned', 'picked_up', 'on_the_way'}.contains(status),
     );
   }
 
   static double? _toDouble(dynamic value) {
     if (value == null) return null;
-    return double.parse(value.toString());
+    return double.tryParse(value.toString());
   }
 
   TrackingData toEntity() => TrackingData(
@@ -50,5 +68,6 @@ class TrackingDto {
         destinationLatitude: destinationLatitude,
         destinationLongitude: destinationLongitude,
         updatedAt: updatedAt,
+        isLive: isLive,
       );
 }

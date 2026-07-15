@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../../../firebase_options.dart';
 import '../entities/auth_session.dart';
 import '../repositories/auth_repository.dart';
 
@@ -9,7 +12,14 @@ class GoogleSignInUseCase {
     this._repository, {
     GoogleSignIn? googleSignIn,
     FirebaseAuth? firebaseAuth,
-  })  : _googleSignIn = googleSignIn ?? GoogleSignIn(scopes: const ['email']),
+  })  : _googleSignIn = googleSignIn ??
+            GoogleSignIn(
+              scopes: const ['email'],
+              clientId: Platform.isIOS
+                  ? DefaultFirebaseOptions.ios.iosClientId
+                  : null,
+              serverClientId: DefaultFirebaseOptions.googleServerClientId,
+            ),
         _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
 
   final AuthRepository _repository;

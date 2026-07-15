@@ -49,6 +49,8 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>GIDClientID</key>
+	<string>887878350921-nefem02td9h6vouu22thtca9qv7akah8.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

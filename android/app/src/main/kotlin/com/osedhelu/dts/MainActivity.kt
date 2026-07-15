@@ -1,4 +1,4 @@
-package com.dts.dts_customer
+package com.osedhelu.dts
 
 import io.flutter.embedding.android.FlutterActivity
 

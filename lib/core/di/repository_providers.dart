@@ -17,6 +17,7 @@ import '../../features/stores/infrastructure/datasources/stores_remote_datasourc
 import '../../features/stores/infrastructure/repositories/stores_repository_impl.dart';
 import '../../features/tracking/domain/repositories/tracking_repository.dart';
 import '../../features/tracking/infrastructure/datasources/tracking_remote_datasource.dart';
+import '../../features/tracking/infrastructure/datasources/tracking_ws_datasource.dart';
 import '../../features/tracking/infrastructure/repositories/tracking_repository_impl.dart';
 import '../network/api_client.dart';
 import '../network/token_storage.dart';
@@ -74,6 +75,14 @@ final ordersRepositoryProvider = Provider<OrdersRepository>((ref) {
 final trackingRemoteDataSourceProvider =
     Provider<TrackingRemoteDataSource>((ref) {
   return TrackingRemoteDataSource(ref.watch(apiClientProvider).dio);
+});
+
+final trackingWsDataSourceProvider = Provider<TrackingWsDataSource>((ref) {
+  final datasource = TrackingWsDataSource();
+  ref.onDispose(() {
+    datasource.disconnect();
+  });
+  return datasource;
 });
 
 final trackingRepositoryProvider = Provider<TrackingRepository>((ref) {
