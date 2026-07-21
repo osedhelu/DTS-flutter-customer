@@ -48,7 +48,11 @@ class FirebaseServiceImpl implements FirebaseService {
   @override
   Future<void> requestNotificationPermissionIfNeeded() async {
     if (kIsWeb) return;
-    await _messaging.requestPermission();
+    await _messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
   }
 
   @override

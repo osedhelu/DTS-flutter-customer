@@ -36,7 +36,7 @@ void main() {
     );
   });
 
-  test('push_notification_handler_test foreground tap and background', () {
+  test('tap status push navega a tracking', () {
     final message = FakeRemoteMessage(
       {'order_id': '15', 'type': 'ON_THE_WAY'},
       title: 'Pedido en camino',
@@ -49,5 +49,13 @@ void main() {
     );
 
     expect(navigatedTo, '/tracking/15');
+  });
+
+  test('tap chat_message navega a chat del pedido', () {
+    handler.handleTap(
+      PushNotificationPayload(orderId: 42, type: 'chat_message'),
+    );
+
+    expect(navigatedTo, '/orders/42/chat');
   });
 }
