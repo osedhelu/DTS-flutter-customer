@@ -49,6 +49,13 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<!-- Requerido para que Flutter descubra el Dart VM Service en debug (iOS 14+). -->
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Permite que las herramientas de Flutter en tu Mac se conecten para depurar la app. No aparece en builds de release.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartobservatory._tcp</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>DTS usa tu ubicación para mostrar el mapa y elegir la dirección de entrega.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
