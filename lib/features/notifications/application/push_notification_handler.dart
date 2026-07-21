@@ -119,7 +119,7 @@ class PushNotificationHandler {
   void _openTracking(PushNotificationPayload payload) {
     _tapController.add(payload);
     if (payload.orderId <= 0) return;
-    final location = '/orders/${payload.orderId}/tracking';
+    final location = '/tracking/${payload.orderId}';
     _navigate?.call(location);
   }
 }
@@ -130,6 +130,6 @@ void attachPushNavigation({
 }) {
   handler.onNotificationTap.listen((payload) {
     if (payload.orderId <= 0) return;
-    router.go('/orders/${payload.orderId}/tracking');
+    router.go('/tracking/${payload.orderId}');
   });
 }

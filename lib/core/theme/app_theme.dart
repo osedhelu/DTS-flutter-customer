@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
-/// Tema Material 3 — verde tinta + ámbar, tipografía Manrope local.
+import 'app_colors.dart';
+import 'app_spacing.dart';
+
+/// Tema Material 3 — Fresh Appetite (coral + cream + Manrope).
 abstract final class AppTheme {
-  static const Color seed = Color(0xFF0B3D2E);
-  static const Color accent = Color(0xFFF5A623);
-  static const Color surface = Color(0xFFF7F8F6);
+  static const Color seed = AppColors.coral;
+  static const Color accent = AppColors.amber;
+  static const Color surface = AppColors.cream;
   static const String fontFamily = 'Manrope';
 
   static ThemeData get light => _buildTheme(Brightness.light);
@@ -14,20 +17,32 @@ abstract final class AppTheme {
   static ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final baseScheme = ColorScheme.fromSeed(
-      seedColor: seed,
+      seedColor: AppColors.coral,
       brightness: brightness,
     );
     final colorScheme = baseScheme.copyWith(
-      secondary: accent,
-      onSecondary: Colors.black,
-      secondaryContainer: accent.withValues(alpha: isDark ? 0.24 : 0.18),
+      primary: isDark ? const Color(0xFFFF6B52) : AppColors.coral,
+      onPrimary: Colors.white,
+      primaryContainer: isDark
+          ? AppColors.coral.withValues(alpha: 0.28)
+          : AppColors.creamDeep,
+      onPrimaryContainer: isDark ? Colors.white : AppColors.ink,
+      secondary: AppColors.amber,
+      onSecondary: AppColors.ink,
+      secondaryContainer: AppColors.amber.withValues(alpha: isDark ? 0.28 : 0.22),
       onSecondaryContainer: const Color(0xFF3D2900),
-      tertiary: accent,
-      surface: isDark ? baseScheme.surface : surface,
+      tertiary: AppColors.mint,
+      onTertiary: Colors.white,
+      error: AppColors.danger,
+      surface: isDark ? const Color(0xFF161412) : AppColors.cream,
+      onSurface: isDark ? const Color(0xFFF5F0EB) : AppColors.ink,
+      onSurfaceVariant: isDark ? const Color(0xFFB0A8A0) : AppColors.inkMuted,
     );
 
     final baseText = ThemeData(brightness: brightness).textTheme.apply(
           fontFamily: fontFamily,
+          bodyColor: colorScheme.onSurface,
+          displayColor: colorScheme.onSurface,
         );
     final textTheme = baseText.copyWith(
       displayLarge: baseText.displayLarge?.copyWith(
@@ -39,7 +54,8 @@ abstract final class AppTheme {
         letterSpacing: -0.3,
       ),
       headlineLarge: baseText.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
-      headlineMedium: baseText.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+      headlineMedium:
+          baseText.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
       titleLarge: baseText.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       titleMedium: baseText.titleMedium?.copyWith(fontWeight: FontWeight.w600),
       titleSmall: baseText.titleSmall?.copyWith(fontWeight: FontWeight.w600),
@@ -48,9 +64,11 @@ abstract final class AppTheme {
       labelLarge: baseText.labelLarge?.copyWith(fontWeight: FontWeight.w700),
     );
 
-    final cardColor = isDark ? colorScheme.surfaceContainerHighest : Colors.white;
-    final inputFill = isDark ? colorScheme.surfaceContainerHigh : Colors.white;
-    final navColor = isDark ? colorScheme.surfaceContainer : Colors.white;
+    final cardColor =
+        isDark ? colorScheme.surfaceContainerHighest : AppColors.paper;
+    final inputFill =
+        isDark ? colorScheme.surfaceContainerHigh : AppColors.paper;
+    final navColor = isDark ? colorScheme.surfaceContainer : AppColors.paper;
 
     return ThemeData(
       useMaterial3: true,
@@ -71,20 +89,24 @@ abstract final class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: cardColor,
-        elevation: isDark ? 0 : 1,
+        elevation: 0,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
           side: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: isDark ? 0.5 : 0.4),
+            color: colorScheme.outlineVariant.withValues(alpha: isDark ? 0.4 : 0.35),
           ),
         ),
         margin: EdgeInsets.zero,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          minimumSize: const Size(64, 52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
+          ),
           textStyle: const TextStyle(
             fontFamily: fontFamily,
             fontWeight: FontWeight.w700,
@@ -93,8 +115,10 @@ abstract final class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          minimumSize: const Size(64, 52),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
+          ),
           side: BorderSide(color: colorScheme.outline),
           textStyle: const TextStyle(
             fontFamily: fontFamily,
@@ -116,42 +140,45 @@ abstract final class AppTheme {
         fillColor: inputFill,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
           borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
           borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusInput),
           borderSide: BorderSide(color: colorScheme.error),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: colorScheme.secondaryContainer,
+        selectedColor: colorScheme.primary.withValues(alpha: 0.14),
         labelStyle: TextStyle(
           fontFamily: fontFamily,
           color: colorScheme.onSecondaryContainer,
           fontWeight: FontWeight.w600,
         ),
         side: BorderSide.none,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusChip),
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: navColor,
         indicatorColor: colorScheme.primary.withValues(alpha: 0.14),
-        elevation: isDark ? 0 : 2,
+        elevation: isDark ? 0 : 1,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
             fontFamily: fontFamily,
             fontSize: 12,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
             color: selected ? colorScheme.primary : colorScheme.onSurfaceVariant,
           );
         }),
@@ -162,7 +189,8 @@ abstract final class AppTheme {
           );
         }),
       ),
-      progressIndicatorTheme: ProgressIndicatorThemeData(color: colorScheme.primary),
+      progressIndicatorTheme:
+          ProgressIndicatorThemeData(color: colorScheme.primary),
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant.withValues(alpha: 0.6),
         space: 1,
@@ -174,7 +202,9 @@ abstract final class AppTheme {
           color: colorScheme.onInverseSurface,
         ),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
       ),
     );
   }

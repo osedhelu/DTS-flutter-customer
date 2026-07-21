@@ -90,7 +90,14 @@ class _Row extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label),
-          Text(value, style: style),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Text(
+              value,
+              style: style,
+              textAlign: TextAlign.end,
+            ),
+          ),
         ],
       ),
     );

@@ -48,8 +48,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _logout() async {
     await ref.read(authRepositoryProvider).logout();
-    ref.invalidate(authStateProvider);
-    if (mounted) context.go('/login');
+    ref.read(authStateProvider.notifier).setAuthenticated(false);
+    // Redirect de GoRouter lleva a /login; no context.go (evita doble nav).
   }
 
   @override

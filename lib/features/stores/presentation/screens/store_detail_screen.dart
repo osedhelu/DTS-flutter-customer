@@ -50,10 +50,21 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen> {
     }
   }
 
+  LatLng? _storeLatLng(Map<String, dynamic> detail) {
+    final lat = detail['latitude'];
+    final lng = detail['longitude'];
+    if (lat is! num || lng is! num) return null;
+    final latitude = lat.toDouble();
+    final longitude = lng.toDouble();
+    if (latitude.isNaN || longitude.isNaN) return null;
+    return LatLng(latitude, longitude);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final detail = _detail;
+    final storeLatLng = detail == null ? null : _storeLatLng(detail);
 
     return Scaffold(
       appBar: AppBar(title: Text(detail?['name']?.toString() ?? 'Tienda')),
@@ -104,27 +115,20 @@ class _StoreDetailScreenState extends ConsumerState<StoreDetailScreen> {
                             ),
                           ],
                           const SizedBox(height: 16),
-                          if (detail['latitude'] != null &&
-                              detail['longitude'] != null)
+                          if (storeLatLng != null)
                             SizedBox(
                               height: 160,
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child: GoogleMap(
                                   initialCameraPosition: CameraPosition(
-                                    target: LatLng(
-                                      (detail['latitude'] as num).toDouble(),
-                                      (detail['longitude'] as num).toDouble(),
-                                    ),
+                                    target: storeLatLng,
                                     zoom: 14,
                                   ),
                                   markers: {
                                     Marker(
                                       markerId: const MarkerId('store'),
-                                      position: LatLng(
-                                        (detail['latitude'] as num).toDouble(),
-                                        (detail['longitude'] as num).toDouble(),
-                                      ),
+                                      position: storeLatLng,
                                     ),
                                   },
                                   zoomControlsEnabled: false,

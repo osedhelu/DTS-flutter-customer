@@ -63,7 +63,7 @@ void main() {
           builder: (_, __) => const ServiceCheckoutScreen(),
         ),
         GoRoute(
-          path: '/orders/:orderId/service-tracking',
+          path: '/service-tracking/:orderId',
           builder: (_, state) => Scaffold(
             body: Text('service-tracking-${state.pathParameters['orderId']}'),
           ),

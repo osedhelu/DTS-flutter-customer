@@ -7,6 +7,7 @@ import '../../../../core/widgets/widgets.dart';
 import '../../domain/entities/order.dart';
 import '../../../profile/domain/entities/customer_profile.dart';
 import '../../../profile/presentation/widgets/map_address_picker.dart';
+import '../utils/api_error_detail.dart';
 import '../utils/checkout_payment_helper.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
@@ -183,7 +184,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         isService: false,
       );
     } catch (e) {
-      setState(() => _error = 'No se pudo crear el pedido');
+      setState(
+        () => _error = parseApiErrorDetail(
+          e,
+          fallback: 'No se pudo crear el pedido',
+        ),
+      );
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -205,121 +211,231 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               actionLabel: 'Ir a inicio',
               onAction: () => context.go('/home'),
             )
-          : ListView(
-              padding: const EdgeInsets.all(16),
+          : Column(
               children: [
-                DtsSectionHeader(
-                  title: cart.storeName,
-                  subtitle: '${cart.itemCount} artículos',
-                ),
-                ...cart.items.map(
-                  (item) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(item.product.name),
-                    subtitle: Text('x${item.quantity}'),
-                    trailing: Text('\$${item.subtotal.toStringAsFixed(2)}'),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    children: [
+                      DtsSectionCard(
+                        title: 'Resumen',
+                        subtitle: cart.storeName,
+                        child: Column(
+                          children: [
+                            for (final item in cart.items)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${item.product.name} ×${item.quantity}',
+                                      ),
+                                    ),
+                                    Text(
+                                      '\$${item.subtotal.toStringAsFixed(2)}',
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (_discount > 0) ...[
+                              const Divider(),
+                              Row(
+                                children: [
+                                  const Expanded(child: Text('Descuento')),
+                                  Text(
+                                    '-\$${_discount.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: theme.colorScheme.tertiary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const Divider(),
+                            Row(
+                              children: [
+                                Text(
+                                  'Total',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  '\$${total.toStringAsFixed(2)}',
+                                  key: const Key('checkout_total'),
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      DtsSectionCard(
+                        title: 'Entrega',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (_addresses.isNotEmpty) ...[
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _addresses
+                                    .map(
+                                      (a) => ChoiceChip(
+                                        label: Text(a.label),
+                                        selected: _selectedAddressId == a.id,
+                                        onSelected: (_) {
+                                          setState(() {
+                                            _selectedAddressId = a.id;
+                                            _addressController.text = a.address;
+                                            _latitude = a.latitude;
+                                            _longitude = a.longitude;
+                                          });
+                                        },
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                            TextField(
+                              controller: _addressController,
+                              decoration: InputDecoration(
+                                labelText: 'Dirección de entrega',
+                                prefixIcon:
+                                    const Icon(Icons.location_on_outlined),
+                                suffixIcon: IconButton(
+                                  icon: const Icon(Icons.map_outlined),
+                                  onPressed: _pickOnMap,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _notesController,
+                              decoration: const InputDecoration(
+                                labelText: 'Notas (opcional)',
+                                prefixIcon: Icon(Icons.notes_outlined),
+                              ),
+                              maxLines: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      DtsSectionCard(
+                        title: 'Pago',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (_paymentMethods.isEmpty)
+                              Text(
+                                'Pago contra entrega (default)',
+                                style: theme.textTheme.bodyMedium,
+                              )
+                            else
+                              ..._paymentMethods.map(
+                                (m) => RadioListTile<int>(
+                                  contentPadding: EdgeInsets.zero,
+                                  value: m['id'] as int,
+                                  groupValue: _selectedPaymentMethodId,
+                                  onChanged: (v) => setState(
+                                    () => _selectedPaymentMethodId = v,
+                                  ),
+                                  title: Text(
+                                    m['name']?.toString() ?? 'Método',
+                                  ),
+                                  subtitle:
+                                      (m['instructions']?.toString() ?? '')
+                                              .isNotEmpty
+                                          ? Text(m['instructions'].toString())
+                                          : null,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      DtsSectionCard(
+                        title: 'Cupón',
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _couponController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Código',
+                                  prefixIcon:
+                                      Icon(Icons.local_offer_outlined),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            FilledButton(
+                              onPressed: _validateCoupon,
+                              child: const Text('Aplicar'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          _error!,
+                          key: const Key('checkout_error'),
+                          style: TextStyle(color: theme.colorScheme.error),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const Divider(),
-                if (_discount > 0)
-                  Text('Descuento: -\$${_discount.toStringAsFixed(2)}'),
-                Text(
-                  'Total: \$${total.toStringAsFixed(2)}',
-                  key: const Key('checkout_total'),
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 16),
-                const DtsSectionHeader(title: 'Entrega'),
-                if (_addresses.isNotEmpty) ...[
-                  Wrap(
-                    spacing: 8,
-                    children: _addresses
-                        .map(
-                          (a) => ChoiceChip(
-                            label: Text(a.label),
-                            selected: _selectedAddressId == a.id,
-                            onSelected: (_) {
-                              setState(() {
-                                _selectedAddressId = a.id;
-                                _addressController.text = a.address;
-                                _latitude = a.latitude;
-                                _longitude = a.longitude;
-                              });
-                            },
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                TextField(
-                  controller: _addressController,
-                  decoration: InputDecoration(
-                    labelText: 'Dirección de entrega',
-                    prefixIcon: const Icon(Icons.location_on_outlined),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.map_outlined),
-                      onPressed: _pickOnMap,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notas (opcional)',
-                    prefixIcon: Icon(Icons.notes_outlined),
-                  ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 16),
-                const DtsSectionHeader(title: 'Pago'),
-                if (_paymentMethods.isEmpty)
-                  const Text('Pago contra entrega (default)')
-                else
-                  ..._paymentMethods.map(
-                    (m) => RadioListTile<int>(
-                      value: m['id'] as int,
-                      groupValue: _selectedPaymentMethodId,
-                      onChanged: (v) => setState(() => _selectedPaymentMethodId = v),
-                      title: Text(m['name']?.toString() ?? 'Método'),
-                      subtitle: (m['instructions']?.toString() ?? '').isNotEmpty
-                          ? Text(m['instructions'].toString())
-                          : null,
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _couponController,
-                        decoration: const InputDecoration(
-                          labelText: 'Cupón',
-                          prefixIcon: Icon(Icons.local_offer_outlined),
+                SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      border: Border(
+                        top: BorderSide(
+                          color: theme.colorScheme.outlineVariant
+                              .withValues(alpha: 0.5),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: _validateCoupon,
-                      child: const Text('Aplicar'),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Text('Total a pagar', style: theme.textTheme.bodyMedium),
+                            const Spacer(),
+                            Text(
+                              '\$${total.toStringAsFixed(2)}',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        DtsPrimaryButton(
+                          key: const Key('confirm_order_button'),
+                          label: 'Confirmar pedido',
+                          isLoading: _submitting,
+                          onPressed: _confirm,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                if (_error != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    _error!,
-                    style: TextStyle(color: theme.colorScheme.error),
                   ),
-                ],
-                const SizedBox(height: 24),
-                DtsPrimaryButton(
-                  key: const Key('confirm_order_button'),
-                  label: 'Confirmar pedido',
-                  isLoading: _submitting,
-                  onPressed: _confirm,
                 ),
               ],
             ),

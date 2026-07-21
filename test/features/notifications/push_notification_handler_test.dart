@@ -48,6 +48,6 @@ void main() {
       PushNotificationPayload(orderId: 15, type: 'ON_THE_WAY'),
     );
 
-    expect(navigatedTo, '/orders/15/tracking');
+    expect(navigatedTo, '/tracking/15');
   });
 }

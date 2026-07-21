@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/widgets.dart';
 import '../../../cart/application/providers/cart_providers.dart';
+import '../../../shell/presentation/screens/customer_shell_screen.dart';
 import '../../application/providers/catalog_providers.dart';
 import '../../domain/entities/category.dart';
 import '../../domain/entities/product.dart';
@@ -46,19 +49,20 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               key: const Key('catalog_cart_button'),
               icon: Badge(
                 label: Text('$cartCount'),
-                child: const Icon(Icons.shopping_cart),
+                backgroundColor: AppColors.coral,
+                child: const Icon(Icons.shopping_bag_outlined),
               ),
-              onPressed: () => context.push('/cart'),
+              onPressed: () => goToCart(context),
             ),
         ],
       ),
       bottomNavigationBar: showStickyCart
           ? SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                 child: FilledButton(
                   key: const Key('sticky_cart_bar'),
-                  onPressed: () => context.push('/cart'),
+                  onPressed: () => goToCart(context),
                   child: Text(
                     'Ver carrito ($cartCount) · \$${cart.total.toStringAsFixed(2)}',
                   ),
@@ -75,13 +79,13 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               controller: _searchController,
               decoration: const InputDecoration(
                 hintText: 'Buscar productos o servicios…',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: Icon(Icons.search_rounded),
               ),
               onChanged: (value) =>
                   ref.read(catalogFiltersProvider.notifier).setSearch(value),
             ),
           ),
-          _FilterBar(
+          _FilterChipsBar(
             filters: filters,
             categoriesAsync: categoriesAsync,
             onTypeChanged: (type) =>
@@ -95,20 +99,61 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
           ),
           Expanded(
             child: productsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(child: Text('Error: $error')),
+              loading: () => GridView.builder(
+                padding: const EdgeInsets.all(16),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.68,
+                ),
+                itemCount: 6,
+                itemBuilder: (_, __) => const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        Expanded(child: DtsSkeleton(height: double.infinity)),
+                        SizedBox(height: 10),
+                        DtsSkeleton(height: 14),
+                        SizedBox(height: 8),
+                        DtsSkeleton(width: 64, height: 14),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              error: (error, _) => DtsErrorView(
+                message: 'No se pudo cargar el catálogo',
+                onRetry: () => ref.invalidate(productsProvider(widget.storeId)),
+              ),
               data: (products) {
                 if (products.isEmpty) {
-                  return const Center(child: Text('Sin resultados'));
+                  return const DtsEmptyState(
+                    icon: Icons.inventory_2_outlined,
+                    title: 'Sin resultados',
+                    message: 'Prueba otro filtro o búsqueda.',
+                  );
                 }
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                return GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.68,
+                  ),
                   itemCount: products.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final product = products[index];
-                    return _ProductTile(
-                      product: product,
+                    return DtsProductCard(
+                      key: Key('product_tile_${product.id}'),
+                      name: product.name,
+                      price: product.price,
+                      imageUrl: product.primaryImageUrl,
+                      badge: product.isService
+                          ? 'Servicio'
+                          : product.promotionBadge,
                       onTap: () {
                         if (product.isService) {
                           context.push(
@@ -122,6 +167,21 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           );
                         }
                       },
+                      onAdd: product.isService
+                          ? null
+                          : () {
+                              ref.read(cartNotifierProvider.notifier).addProduct(
+                                    storeId: widget.storeId,
+                                    storeName: widget.storeName ?? 'Comercio',
+                                    product: product,
+                                  );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${product.name} agregado'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
                     );
                   },
                 );
@@ -134,44 +194,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   }
 }
 
-class _ProductTile extends StatelessWidget {
-  const _ProductTile({required this.product, required this.onTap});
-
-  final Product product;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        key: Key('product_tile_${product.id}'),
-        leading: product.primaryImageUrl != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  product.primaryImageUrl!,
-                  width: 56,
-                  height: 56,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.image),
-                ),
-              )
-            : CircleAvatar(
-                child: Icon(
-                  product.isService ? Icons.home_repair_service : Icons.inventory_2,
-                ),
-              ),
-        title: Text(product.name),
-        subtitle: Text('\$${product.price.toStringAsFixed(2)}'),
-        trailing: _ProductTypeBadge(type: product.productType),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-class _FilterBar extends StatelessWidget {
-  const _FilterBar({
+class _FilterChipsBar extends StatelessWidget {
+  const _FilterChipsBar({
     required this.filters,
     required this.categoriesAsync,
     required this.onTypeChanged,
@@ -187,137 +211,195 @@ class _FilterBar extends StatelessWidget {
   final ValueChanged<int?> onSubcategoryChanged;
   final ValueChanged<ProductSort> onSortChanged;
 
+  Future<void> _openFiltersSheet(BuildContext context) async {
+    final categories = categoriesAsync.valueOrNull ?? const <ProductCategory>[];
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            8,
+            20,
+            20 + MediaQuery.paddingOf(ctx).bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Filtros',
+                style: Theme.of(ctx).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              Text('Ordenar', style: Theme.of(ctx).textTheme.titleSmall),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final e in [
+                    (ProductSort.nameAsc, 'Nombre'),
+                    (ProductSort.priceAsc, 'Precio ↑'),
+                    (ProductSort.priceDesc, 'Precio ↓'),
+                  ])
+                    ChoiceChip(
+                      key: e.$1 == ProductSort.nameAsc
+                          ? const Key('catalog_sort_dropdown')
+                          : null,
+                      label: Text(e.$2),
+                      selected: filters.sort == e.$1,
+                      onSelected: (_) {
+                        onSortChanged(e.$1);
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                ],
+              ),
+              if (categories.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text('Categoría', style: Theme.of(ctx).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ChoiceChip(
+                      key: const Key('category_dropdown'),
+                      label: const Text('Todas'),
+                      selected: filters.categoryId == null,
+                      onSelected: (_) {
+                        onCategoryChanged(null);
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                    ...categories.map(
+                      (c) => ChoiceChip(
+                        label: Text(c.name),
+                        selected: filters.categoryId == c.id,
+                        onSelected: (_) {
+                          onCategoryChanged(c.id);
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              Builder(
+                builder: (_) {
+                  ProductCategory? selected;
+                  for (final c in categories) {
+                    if (c.id == filters.categoryId) {
+                      selected = c;
+                      break;
+                    }
+                  }
+                  if (selected == null || selected.subcategories.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 16),
+                      Text(
+                        'Subcategoría',
+                        style: Theme.of(ctx).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ChoiceChip(
+                            key: const Key('subcategory_dropdown'),
+                            label: const Text('Todas'),
+                            selected: filters.subcategoryId == null,
+                            onSelected: (_) {
+                              onSubcategoryChanged(null);
+                              Navigator.pop(ctx);
+                            },
+                          ),
+                          ...selected.subcategories.map(
+                            (s) => ChoiceChip(
+                              label: Text(s.name),
+                              selected: filters.subcategoryId == s.id,
+                              onSelected: (_) {
+                                onSubcategoryChanged(s.id);
+                                Navigator.pop(ctx);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            children: [
-              FilterChip(
-                key: const Key('filter_physical'),
-                label: const Text('Físico'),
-                selected: filters.productType == ProductType.physical,
-                onSelected: (_) => onTypeChanged(
-                  filters.productType == ProductType.physical
-                      ? null
-                      : ProductType.physical,
-                ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            FilterChip(
+              key: const Key('filter_physical'),
+              label: const Text('Físico'),
+              selected: filters.productType == ProductType.physical,
+              onSelected: (_) => onTypeChanged(
+                filters.productType == ProductType.physical
+                    ? null
+                    : ProductType.physical,
               ),
-              FilterChip(
-                key: const Key('filter_service'),
-                label: const Text('Servicio'),
-                selected: filters.productType == ProductType.service,
-                onSelected: (_) => onTypeChanged(
-                  filters.productType == ProductType.service
-                      ? null
-                      : ProductType.service,
+            ),
+            const SizedBox(width: 8),
+            FilterChip(
+              key: const Key('filter_service'),
+              label: const Text('Servicio'),
+              selected: filters.productType == ProductType.service,
+              onSelected: (_) => onTypeChanged(
+                filters.productType == ProductType.service
+                    ? null
+                    : ProductType.service,
+              ),
+            ),
+            const SizedBox(width: 8),
+            ActionChip(
+              avatar: const Icon(Icons.tune_rounded, size: 18),
+              label: const Text('Más filtros'),
+              onPressed: () => _openFiltersSheet(context),
+            ),
+            if (filters.categoryId != null ||
+                filters.sort != ProductSort.nameAsc) ...[
+              const SizedBox(width: 8),
+              InputChip(
+                label: Text(
+                  filters.sort == ProductSort.priceAsc
+                      ? 'Precio ↑'
+                      : filters.sort == ProductSort.priceDesc
+                          ? 'Precio ↓'
+                          : 'Filtros',
                 ),
+                onDeleted: () {
+                  onSortChanged(ProductSort.nameAsc);
+                  onCategoryChanged(null);
+                },
               ),
             ],
-          ),
-          DropdownButton<ProductSort>(
-            key: const Key('catalog_sort_dropdown'),
-            isExpanded: true,
-            value: filters.sort,
-            items: const [
-              DropdownMenuItem(
-                value: ProductSort.nameAsc,
-                child: Text('Orden: nombre'),
-              ),
-              DropdownMenuItem(
-                value: ProductSort.priceAsc,
-                child: Text('Precio: menor a mayor'),
-              ),
-              DropdownMenuItem(
-                value: ProductSort.priceDesc,
-                child: Text('Precio: mayor a menor'),
-              ),
-            ],
-            onChanged: (value) {
-              if (value != null) onSortChanged(value);
-            },
-          ),
-          categoriesAsync.when(
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-            data: (categories) {
-              if (categories.isEmpty) return const SizedBox.shrink();
-              ProductCategory? selectedCategory;
-              for (final category in categories) {
-                if (category.id == filters.categoryId) {
-                  selectedCategory = category;
-                  break;
-                }
-              }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DropdownButton<int?>(
-                    key: const Key('category_dropdown'),
-                    isExpanded: true,
-                    hint: const Text('Categoría'),
-                    value: filters.categoryId,
-                    items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text('Todas'),
-                      ),
-                      ...categories.map(
-                        (category) => DropdownMenuItem<int?>(
-                          value: category.id,
-                          child: Text(category.name),
-                        ),
-                      ),
-                    ],
-                    onChanged: onCategoryChanged,
-                  ),
-                  if (selectedCategory != null &&
-                      selectedCategory.subcategories.isNotEmpty)
-                    DropdownButton<int?>(
-                      key: const Key('subcategory_dropdown'),
-                      isExpanded: true,
-                      hint: const Text('Subcategoría'),
-                      value: filters.subcategoryId,
-                      items: [
-                        const DropdownMenuItem<int?>(
-                          value: null,
-                          child: Text('Todas'),
-                        ),
-                        ...selectedCategory.subcategories.map(
-                          (sub) => DropdownMenuItem<int?>(
-                            value: sub.id,
-                            child: Text(sub.name),
-                          ),
-                        ),
-                      ],
-                      onChanged: onSubcategoryChanged,
-                    ),
-                ],
-              );
-            },
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-}
-
-class _ProductTypeBadge extends StatelessWidget {
-  const _ProductTypeBadge({required this.type});
-
-  final ProductType type;
-
-  @override
-  Widget build(BuildContext context) {
-    final label = type == ProductType.service ? 'Servicio' : 'Físico';
-    return Chip(
-      key: Key('badge_$label'),
-      label: Text(label),
-      visualDensity: VisualDensity.compact,
     );
   }
 }

@@ -46,4 +46,20 @@ void main() {
     expect(result.id, 99);
     verify(() => repository.createOrder(any())).called(1);
   });
+
+  test('create_order_usecase_propagates_error_test', () async {
+    when(() => repository.createOrder(any())).thenThrow(
+      Exception('stock insuficiente'),
+    );
+
+    expect(
+      () => useCase(
+        const CreateOrderParams(
+          storeId: 1,
+          items: [CreateOrderItem(productId: 5, quantity: 2)],
+        ),
+      ),
+      throwsA(isA<Exception>()),
+    );
+  });
 }

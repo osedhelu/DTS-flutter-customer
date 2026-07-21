@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/debug/agent_debug_log.dart';
 import '../../../../core/di/providers.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../application/post_auth_service.dart';
 
@@ -40,8 +41,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       await action();
+      // #region agent log
+      agentDebugLog(
+        hypothesisId: 'I',
+        location: 'login_screen.dart:_afterAuth',
+        message: 'auth success → setAuthenticated(true) via postAuth',
+        data: {'willInvalidateAuth': false, 'setAuthenticated': true},
+        runId: 'post-fix-3',
+      );
+      // #endregion
       ref.read(postAuthServiceProvider).complete(ref);
-      if (mounted) context.go('/home');
+      // No navegar aquí: setAuthenticated + redirect de GoRouter → /home.
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'No se pudo iniciar sesión');
@@ -85,8 +95,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              scheme.primaryContainer,
-              scheme.surface,
+              AppColors.creamDeep,
+              AppColors.cream,
             ],
             stops: const [0.0, 0.45],
           ),
@@ -98,27 +108,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Center(
-                  child: Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppTheme.accent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.shopping_bag_outlined,
-                      size: 40,
-                      color: Color(0xFF0B3D2E),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'DTS Delivery',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    color: scheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w700,
+                  child: Column(
+                    children: [
+                      const DtsBrandMark(size: 72, showWordmark: false),
+                      const SizedBox(height: 16),
+                      Text(
+                        'DTS',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: AppColors.ink,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -126,7 +129,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   'Pide en tus comercios favoritos',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onPrimaryContainer.withValues(alpha: 0.86),
+                    color: AppColors.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 36),

@@ -60,9 +60,9 @@ class _CustomerOrdersScreenState extends ConsumerState<CustomerOrdersScreen> {
 
   void _openOrder(Order order) {
     if (order.isService) {
-      context.push('/orders/${order.id}/service-tracking');
+      context.push('/service-tracking/${order.id}');
     } else if (order.isActive) {
-      context.push('/orders/${order.id}/tracking');
+      context.push('/tracking/${order.id}');
     } else {
       context.push('/orders/${order.id}');
     }
@@ -130,10 +130,12 @@ class _CustomerOrdersScreenState extends ConsumerState<CustomerOrdersScreen> {
                                             : 'Pedido #${order.id}',
                                       ),
                                       subtitle: Text(
-                                        '${order.status} · \$${order.total.toStringAsFixed(2)}',
+                                        '${DtsStatusChip.labelForStatus(order.status)} · \$${order.total.toStringAsFixed(2)}',
                                       ),
                                       trailing: DtsStatusChip(
-                                        label: order.status,
+                                        label: DtsStatusChip.labelForStatus(
+                                          order.status,
+                                        ),
                                         tone: DtsStatusChip.toneForStatus(
                                           order.status,
                                         ),

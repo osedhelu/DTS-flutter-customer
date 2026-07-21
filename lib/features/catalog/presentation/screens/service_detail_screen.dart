@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/widgets/widgets.dart';
 import '../../../cart/application/providers/cart_providers.dart';
 import '../../application/providers/catalog_providers.dart';
 import '../widgets/dynamic_fields_form.dart';
@@ -24,7 +26,6 @@ class ServiceDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ServiceDetailScreenState extends ConsumerState<ServiceDetailScreen> {
-  Map<String, dynamic> _dynamicValues = const {};
   String _dynamicNotes = '';
 
   @override
@@ -34,66 +35,103 @@ class _ServiceDetailScreenState extends ConsumerState<ServiceDetailScreen> {
         (storeId: widget.storeId, productId: widget.productId),
       ),
     );
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Servicio')),
       body: detailAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        loading: () => const DtsLoading(),
+        error: (e, _) => DtsErrorView(
+          message: 'No se pudo cargar el servicio',
+          onRetry: () => ref.invalidate(
+            productDetailProvider(
+              (storeId: widget.storeId, productId: widget.productId),
+            ),
+          ),
+        ),
         data: (detail) {
           final product = detail.product;
-          return Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (product.primaryImageUrl != null)
-                  Image.network(product.primaryImageUrl!, height: 180),
-                Text(
-                  product.name,
-                  style: Theme.of(context).textTheme.headlineSmall,
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 240,
+                pinned: true,
+                title: const Text('Servicio'),
+                flexibleSpace: FlexibleSpaceBar(
+                  background: DtsNetworkImage(url: product.primaryImageUrl),
                 ),
-                const SizedBox(height: 8),
-                Text('\$${product.price.toStringAsFixed(2)}'),
-                if (product.durationMinutes != null) ...[
-                  const SizedBox(height: 8),
-                  Text('Duración estimada: ${product.durationMinutes} min'),
-                ],
-                if (product.description != null) ...[
-                  const SizedBox(height: 8),
-                  Text(product.description!),
-                ],
-                const SizedBox(height: 12),
-                DynamicFieldsForm(
-                  fieldConfig: detail.fieldConfig,
-                  onChanged: (values) {
-                    setState(() {
-                      _dynamicValues = values;
-                      _dynamicNotes = formatDynamicValuesNotes(values);
-                    });
-                  },
-                ),
-                const Spacer(),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    key: const Key('request_service_button'),
-                    onPressed: () {
-                      ref.read(cartNotifierProvider.notifier).addProduct(
-                            storeId: widget.storeId,
-                            storeName: widget.storeName,
-                            product: product,
-                            notes: _dynamicNotes.isEmpty ? null : _dynamicNotes,
-                          );
-                      context.push('/checkout/service');
-                    },
-                    child: const Text('Solicitar servicio'),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        product.name,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      DtsPriceTag(amount: product.price, emphasized: true),
+                      if (product.durationMinutes != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Duración estimada: ${product.durationMinutes} min',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                      if ((product.description ?? '').isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.lg),
+                        DtsSectionCard(
+                          title: 'Descripción',
+                          child: Text(product.description!),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.lg),
+                      DtsSectionCard(
+                        title: 'Detalles',
+                        child: DynamicFieldsForm(
+                          fieldConfig: detail.fieldConfig,
+                          onChanged: (values) {
+                            setState(() {
+                              _dynamicNotes = formatDynamicValuesNotes(values);
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 100),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
+      ),
+      bottomNavigationBar: detailAsync.maybeWhen(
+        data: (detail) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: DtsPrimaryButton(
+              key: const Key('request_service_button'),
+              label: 'Solicitar servicio',
+              icon: Icons.handshake_outlined,
+              onPressed: () {
+                ref.read(cartNotifierProvider.notifier).addProduct(
+                      storeId: widget.storeId,
+                      storeName: widget.storeName,
+                      product: detail.product,
+                      notes: _dynamicNotes.isEmpty ? null : _dynamicNotes,
+                    );
+                context.push('/checkout/service');
+              },
+            ),
+          ),
+        ),
+        orElse: () => null,
       ),
     );
   }

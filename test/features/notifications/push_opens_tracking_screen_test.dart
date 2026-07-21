@@ -12,7 +12,7 @@ void main() {
     final router = GoRouter(
       routes: [
         GoRoute(
-          path: '/orders/:orderId/tracking',
+          path: '/tracking/:orderId',
           builder: (_, state) => Text('tracking-${state.pathParameters['orderId']}'),
         ),
       ],
@@ -29,6 +29,6 @@ void main() {
       const PushNotificationPayload(orderId: 88, type: 'ON_THE_WAY'),
     );
 
-    expect(router.routeInformationProvider.value.uri.path, '/orders/88/tracking');
+    expect(router.routeInformationProvider.value.uri.path, '/tracking/88');
   });
 }

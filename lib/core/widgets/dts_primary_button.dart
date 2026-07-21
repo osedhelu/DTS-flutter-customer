@@ -33,9 +33,12 @@ class DtsPrimaryButton extends StatelessWidget {
                 ],
               );
 
-    return FilledButton(
-      onPressed: isLoading ? null : onPressed,
-      child: child,
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: isLoading ? null : onPressed,
+        child: child,
+      ),
     );
   }
 }

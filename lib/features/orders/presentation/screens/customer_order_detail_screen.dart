@@ -90,7 +90,7 @@ class _CustomerOrderDetailScreenState
                   padding: const EdgeInsets.all(24),
                   children: [
                     DtsStatusChip(
-                      label: order.status,
+                      label: DtsStatusChip.labelForStatus(order.status),
                       tone: DtsStatusChip.toneForStatus(order.status),
                     ),
                     const SizedBox(height: 16),
@@ -114,13 +114,13 @@ class _CustomerOrderDetailScreenState
                       DtsPrimaryButton(
                         label: 'Ver en mapa',
                         onPressed: () =>
-                            context.push('/orders/${order.id}/tracking'),
+                            context.push('/tracking/${order.id}'),
                       ),
                     if (order.isActive && order.isService)
                       DtsPrimaryButton(
                         label: 'Ver seguimiento',
                         onPressed: () => context
-                            .push('/orders/${order.id}/service-tracking'),
+                            .push('/service-tracking/${order.id}'),
                       ),
                     if (order.driverPhone?.isNotEmpty == true) ...[
                       const SizedBox(height: 8),

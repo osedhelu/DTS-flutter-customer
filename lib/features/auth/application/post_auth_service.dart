@@ -18,9 +18,9 @@ class PostAuthService {
   final RegisterFcmTokenUseCase _registerFcmTokenUseCase;
   final FirebaseService _firebaseService;
 
-  /// Invalida sesión y navega; el registro push corre en segundo plano.
+  /// Marca sesión autenticada sin pasar por `loading` (evita race en Navigator).
   void complete(WidgetRef ref) {
-    ref.invalidate(authStateProvider);
+    ref.read(authStateProvider.notifier).setAuthenticated(true);
     unawaited(_registerPushInBackground());
   }
 

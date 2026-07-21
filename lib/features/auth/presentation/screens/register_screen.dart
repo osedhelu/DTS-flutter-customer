@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/providers.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../application/post_auth_service.dart';
 import '../../domain/usecases/register_usecase.dart';
@@ -59,8 +59,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-
-    if (mounted) context.go('/home');
+    // Redirect de GoRouter → /home tras invalidate de auth.
   }
 
   @override
@@ -71,12 +70,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Scaffold(
       body: Container(
         width: double.infinity,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [scheme.primaryContainer, scheme.surface],
-            stops: const [0.0, 0.45],
+            colors: [AppColors.creamDeep, AppColors.cream],
+            stops: [0.0, 0.45],
           ),
         ),
         child: SafeArea(
@@ -86,27 +85,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               key: _formKey,
               child: ListView(
                 children: [
-                  Center(
-                    child: Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: AppTheme.accent,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: const Icon(
-                        Icons.person_add_alt_1_outlined,
-                        color: Color(0xFF0B3D2E),
-                        size: 34,
-                      ),
-                    ),
+                  const Center(
+                    child: DtsBrandMark(size: 64, showWordmark: false),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Text(
                     'Crear cuenta',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      color: scheme.onPrimaryContainer,
+                      color: AppColors.ink,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -114,7 +102,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     'Regístrate y empieza a pedir en minutos',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onPrimaryContainer.withValues(alpha: 0.86),
+                      color: AppColors.inkMuted,
                     ),
                   ),
                   const SizedBox(height: 24),

@@ -41,9 +41,27 @@ final appleSignInUseCaseProvider = Provider<AppleSignInUseCase>((ref) {
   );
 });
 
-final authStateProvider = FutureProvider<bool>((ref) async {
-  return ref.watch(authRepositoryProvider).isAuthenticated();
-});
+/// Auth sin flicker `loading` en login: `setAuthenticated` escribe
+/// `AsyncData` directo (el `invalidate` de FutureProvider rompía GoRouter).
+class AuthStateNotifier extends AsyncNotifier<bool> {
+  @override
+  Future<bool> build() {
+    return ref.read(authRepositoryProvider).isAuthenticated();
+  }
+
+  void setAuthenticated(bool value) {
+    state = AsyncData(value);
+  }
+
+  Future<void> refresh() async {
+    state = AsyncData(
+      await ref.read(authRepositoryProvider).isAuthenticated(),
+    );
+  }
+}
+
+final authStateProvider =
+    AsyncNotifierProvider<AuthStateNotifier, bool>(AuthStateNotifier.new);
 
 final createOrderUseCaseProvider = Provider<CreateOrderUseCase>((ref) {
   return CreateOrderUseCase(ref.watch(ordersRepositoryProvider));

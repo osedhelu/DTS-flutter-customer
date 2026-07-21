@@ -69,7 +69,7 @@ void main() {
           builder: (_, __) => const CheckoutScreen(),
         ),
         GoRoute(
-          path: '/orders/:orderId/tracking',
+          path: '/tracking/:orderId',
           builder: (_, state) => Scaffold(
             body: Text('tracking-${state.pathParameters['orderId']}'),
           ),
@@ -105,7 +105,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('checkout_total')), findsOneWidget);
-    expect(find.text('Total: \$15.00'), findsOneWidget);
+    expect(find.text('\$15.00'), findsWidgets);
 
     await tester.enterText(find.byType(TextField).first, 'Calle 1 #2-3');
     await tester.tap(find.text('Confirmar pedido').last);

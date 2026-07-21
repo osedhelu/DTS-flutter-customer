@@ -36,8 +36,8 @@ Future<void> completeOrderWithOptionalSandbox({
   if (!isSandboxPaymentMethod(method)) {
     context.go(
       isService
-          ? '/orders/$orderId/service-tracking'
-          : '/orders/$orderId/tracking',
+          ? '/service-tracking/$orderId'
+          : '/tracking/$orderId',
     );
     return;
   }
@@ -63,14 +63,14 @@ Future<void> completeOrderWithOptionalSandbox({
   if (paid == true) {
     context.go(
       isService
-          ? '/orders/$orderId/service-tracking'
-          : '/orders/$orderId/tracking',
+          ? '/service-tracking/$orderId'
+          : '/tracking/$orderId',
     );
   } else {
     context.go(
       isService
-          ? '/orders/$orderId/service-tracking'
-          : '/orders/$orderId/tracking',
+          ? '/service-tracking/$orderId'
+          : '/tracking/$orderId',
     );
   }
 }

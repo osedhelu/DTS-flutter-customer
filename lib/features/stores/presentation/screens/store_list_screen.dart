@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/providers.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/widgets.dart';
-import '../../application/providers/stores_providers.dart';
-import '../../domain/entities/store.dart';
+import '../../application/providers/featured_products_provider.dart';
 
 class StoreListScreen extends ConsumerStatefulWidget {
   const StoreListScreen({super.key});
@@ -19,11 +19,14 @@ class _StoreListScreenState extends ConsumerState<StoreListScreen> {
   final _search = TextEditingController();
   List<Map<String, dynamic>> _banners = [];
   _HomeStoreFilter _storeFilter = _HomeStoreFilter.all;
+  String? _greetingName;
+  String? _shortAddress;
 
   @override
   void initState() {
     super.initState();
     _loadBanners();
+    _loadProfileSnippet();
   }
 
   @override
@@ -49,159 +52,325 @@ class _StoreListScreenState extends ConsumerState<StoreListScreen> {
     } catch (_) {}
   }
 
+  Future<void> _loadProfileSnippet() async {
+    try {
+      final profile =
+          await ref.read(customerProfileRemoteDataSourceProvider).getProfile();
+      if (!mounted) return;
+      final name = profile.fullName.trim();
+      final first = name.isEmpty ? null : name.split(' ').first;
+      setState(() {
+        _greetingName = first;
+        _shortAddress = profile.defaultAddress.trim().isEmpty
+            ? null
+            : profile.defaultAddress.trim();
+      });
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final storesAsync = ref.watch(storesListProvider);
+    final featuredAsync = ref.watch(featuredProductsProvider);
     final query = _search.text.trim().toLowerCase();
     final theme = Theme.of(context);
+    final greeting = _greetingName == null
+        ? '¿Qué se te antoja?'
+        : 'Hola, $_greetingName';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DTS Delivery'),
-        actions: [
-          IconButton(
-            icon: Badge(
-              isLabelVisible: ref.watch(cartItemCountProvider) > 0,
-              label: Text('${ref.watch(cartItemCountProvider)}'),
-              child: const Icon(Icons.shopping_cart_outlined),
-            ),
-            onPressed: () => context.push('/cart'),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              controller: _search,
-              onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                hintText: 'Buscar comercios…',
-                prefixIcon: Icon(Icons.search),
+        titleSpacing: 16,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const DtsBrandMark(size: 32),
+            const SizedBox(height: 2),
+            Text(
+              greeting,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.inkMuted,
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Wrap(
-              spacing: 8,
-              children: [
-                FilterChip(
-                  key: const Key('home_filter_all'),
-                  label: const Text('Todos'),
-                  selected: _storeFilter == _HomeStoreFilter.all,
-                  onSelected: (_) => setState(() => _storeFilter = _HomeStoreFilter.all),
-                ),
-                FilterChip(
-                  key: const Key('home_filter_products'),
-                  label: const Text('Productos'),
-                  selected: _storeFilter == _HomeStoreFilter.products,
-                  onSelected: (_) =>
-                      setState(() => _storeFilter = _HomeStoreFilter.products),
-                ),
-                FilterChip(
-                  key: const Key('home_filter_services'),
-                  label: const Text('Servicios'),
-                  selected: _storeFilter == _HomeStoreFilter.services,
-                  onSelected: (_) =>
-                      setState(() => _storeFilter = _HomeStoreFilter.services),
-                ),
-              ],
-            ),
-          ),
-          if (_banners.isNotEmpty)
-            SizedBox(
-              height: 110,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: _banners.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, i) {
-                  final b = _banners[i];
-                  final title = '${b['title'] ?? b['name'] ?? 'Promo'}';
-                  return Container(
-                    width: 220,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.seed,
-                          AppTheme.seed.withValues(alpha: 0.75),
-                        ],
+          ],
+        ),
+        toolbarHeight: 72,
+        actions: [
+          if ((_shortAddress ?? '').isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: theme.colorScheme.primary,
                       ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Align(
-                      alignment: Alignment.bottomLeft,
-                      child: Text(
-                        title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                      const SizedBox(width: 2),
+                      Flexible(
+                        child: Text(
+                          _shortAddress!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall,
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          Expanded(
-            child: storesAsync.when(
-              loading: () => const DtsLoading(),
-              error: (error, _) => DtsErrorView(
-                message: 'No se pudieron cargar los comercios',
-                onRetry: () => ref.invalidate(storesListProvider),
-              ),
-              data: (stores) {
-                var filtered = query.isEmpty
-                    ? stores
-                    : stores
-                        .where(
-                          (s) =>
-                              s.name.toLowerCase().contains(query) ||
-                              (s.address?.toLowerCase().contains(query) ??
-                                  false),
-                        )
-                        .toList();
-                filtered = switch (_storeFilter) {
-                  _HomeStoreFilter.all => filtered,
-                  _HomeStoreFilter.services => filtered
-                      .where((s) => s.isServicesVertical)
-                      .toList(),
-                  _HomeStoreFilter.products => filtered
-                      .where((s) => !s.isServicesVertical)
-                      .toList(),
-                };
-                if (filtered.isEmpty) {
-                  return DtsEmptyState(
-                    icon: Icons.storefront_outlined,
-                    title: 'Sin comercios',
-                    message: query.isEmpty
-                        ? 'No hay comercios disponibles ahora.'
-                        : 'Ningún resultado para “$query”.',
-                  );
-                }
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(storesListProvider);
-                    await _loadBanners();
-                  },
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final store = filtered[index];
-                      return _StoreCard(store: store);
-                    },
+                    ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
-          ),
         ],
+      ),
+      body: storesAsync.when(
+        loading: () => ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: const [
+            DtsSkeleton(height: 48),
+            SizedBox(height: AppSpacing.md),
+            DtsSkeleton(height: 140),
+            SizedBox(height: AppSpacing.lg),
+            DtsStoreCardSkeleton(),
+            SizedBox(height: AppSpacing.md),
+            DtsStoreCardSkeleton(),
+          ],
+        ),
+        error: (error, _) => DtsErrorView(
+          message: 'No se pudieron cargar los comercios',
+          onRetry: () => ref.invalidate(storesListProvider),
+        ),
+        data: (stores) {
+          var filtered = query.isEmpty
+              ? stores
+              : stores
+                  .where(
+                    (s) =>
+                        s.name.toLowerCase().contains(query) ||
+                        (s.address?.toLowerCase().contains(query) ?? false),
+                  )
+                  .toList();
+          filtered = switch (_storeFilter) {
+            _HomeStoreFilter.all => filtered,
+            _HomeStoreFilter.services =>
+              filtered.where((s) => s.isServicesVertical).toList(),
+            _HomeStoreFilter.products =>
+              filtered.where((s) => !s.isServicesVertical).toList(),
+          };
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(storesListProvider);
+              ref.invalidate(featuredProductsProvider);
+              await _loadBanners();
+              await _loadProfileSnippet();
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    child: TextField(
+                      controller: _search,
+                      onChanged: (_) => setState(() {}),
+                      decoration: const InputDecoration(
+                        hintText: 'Buscar comercios…',
+                        prefixIcon: Icon(Icons.search_rounded),
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final e in [
+                            (_HomeStoreFilter.all, 'Todos', 'home_filter_all'),
+                            (
+                              _HomeStoreFilter.products,
+                              'Productos',
+                              'home_filter_products'
+                            ),
+                            (
+                              _HomeStoreFilter.services,
+                              'Servicios',
+                              'home_filter_services'
+                            ),
+                          ])
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                key: Key(e.$3),
+                                label: Text(e.$2),
+                                selected: _storeFilter == e.$1,
+                                onSelected: (_) =>
+                                    setState(() => _storeFilter = e.$1),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (_banners.isNotEmpty)
+                  const SliverToBoxAdapter(child: SizedBox(height: 4)),
+                if (_banners.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 148,
+                      child: PageView.builder(
+                        controller: PageController(viewportFraction: 0.92),
+                        itemCount: _banners.length,
+                        itemBuilder: (context, i) {
+                          final b = _banners[i];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: _BannerCard(banner: b),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                featuredAsync.when(
+                  data: (featured) {
+                    if (featured.isEmpty) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: const Duration(milliseconds: 420),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) => Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 12 * (1 - value)),
+                              child: child,
+                            ),
+                          ),
+                          child: DtsHorizontalRail(
+                            title: 'Más vendidos',
+                            subtitle: 'Lo que más piden hoy',
+                            height: 232,
+                            children: [
+                              for (final item in featured)
+                                DtsProductCard(
+                                  name: item.product.name,
+                                  price: item.product.price,
+                                  imageUrl: item.product.primaryImageUrl,
+                                  badge: item.product.promotionBadge ?? 'Top',
+                                  onTap: () {
+                                    final p = item.product;
+                                    final path = p.isService
+                                        ? '/stores/${p.storeId}/catalog/services/${p.id}'
+                                        : '/stores/${p.storeId}/catalog/products/${p.id}';
+                                    context.push(path, extra: item.storeName);
+                                  },
+                                  onAdd: item.product.isService
+                                      ? null
+                                      : () {
+                                          ref
+                                              .read(
+                                                cartNotifierProvider.notifier,
+                                              )
+                                              .addProduct(
+                                                storeId: item.product.storeId,
+                                                storeName: item.storeName,
+                                                product: item.product,
+                                              );
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Agregado al carrito',
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  loading: () => const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(16, 24, 16, 0),
+                      child: DtsSkeleton(height: 180),
+                    ),
+                  ),
+                  error: (_, __) =>
+                      const SliverToBoxAdapter(child: SizedBox.shrink()),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: DtsSectionHeader(
+                      title: 'Comercios cerca',
+                      subtitle: filtered.isEmpty
+                          ? null
+                          : '${filtered.length} disponibles',
+                    ),
+                  ),
+                ),
+                if (filtered.isEmpty)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: DtsEmptyState(
+                      icon: Icons.storefront_outlined,
+                      title: 'Sin comercios',
+                      message: 'No hay comercios disponibles ahora.',
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    sliver: SliverList.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppSpacing.md),
+                      itemBuilder: (context, index) {
+                        final store = filtered[index];
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: Duration(milliseconds: 280 + (index * 40).clamp(0, 200)),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) => Opacity(
+                            opacity: value,
+                            child: Transform.translate(
+                              offset: Offset(0, 10 * (1 - value)),
+                              child: child,
+                            ),
+                          ),
+                          child: KeyedSubtree(
+                            key: Key('store_tile_${store.id}'),
+                            child: DtsStoreCard(
+                              name: store.name,
+                              logoUrl: store.logoUrl,
+                              address: store.address,
+                              isOpen: store.isOpen,
+                              onTap: () =>
+                                  context.push('/stores/${store.id}'),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -209,80 +378,60 @@ class _StoreListScreenState extends ConsumerState<StoreListScreen> {
 
 enum _HomeStoreFilter { all, products, services }
 
-class _StoreCard extends StatelessWidget {
-  const _StoreCard({required this.store});
+class _BannerCard extends StatelessWidget {
+  const _BannerCard({required this.banner});
 
-  final Store store;
+  final Map<String, dynamic> banner;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      key: Key('store_tile_${store.id}'),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: store.isOpen
-            ? () => context.push('/stores/${store.id}')
-            : null,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: store.logoUrl != null && store.logoUrl!.isNotEmpty
-                    ? DtsNetworkImage(
-                        url: store.logoUrl,
-                        width: 64,
-                        height: 64,
-                        borderRadius: BorderRadius.circular(12),
-                      )
-                    : _placeholder(theme),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      store.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    if (store.address != null)
-                      Text(
-                        store.address!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    const SizedBox(height: 6),
-                    DtsStatusChip(
-                      label: store.isOpen ? 'Abierto' : 'Cerrado',
-                      tone: store.isOpen
-                          ? DtsChipTone.success
-                          : DtsChipTone.neutral,
-                    ),
-                  ],
+    final title = '${banner['title'] ?? banner['name'] ?? 'Promo'}';
+    final imageUrl = (banner['image_url'] ?? banner['image'] ?? '').toString();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (imageUrl.isNotEmpty)
+            DtsNetworkImage(url: imageUrl)
+          else
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.coral, AppColors.amber],
                 ),
               ),
-              if (store.isOpen) const Icon(Icons.chevron_right),
-            ],
+            ),
+          if (imageUrl.isNotEmpty)
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Color(0x99000000)],
+                ),
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _placeholder(ThemeData theme) {
-    return Container(
-      width: 64,
-      height: 64,
-      color: theme.colorScheme.secondaryContainer,
-      child: Icon(
-        Icons.store,
-        color: theme.colorScheme.onSecondaryContainer,
+        ],
       ),
     );
   }

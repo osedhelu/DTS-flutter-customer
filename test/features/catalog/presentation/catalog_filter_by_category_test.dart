@@ -68,8 +68,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('badge_Físico')), findsOneWidget);
-    expect(find.byKey(const Key('badge_Servicio')), findsOneWidget);
+    expect(find.text('Café'), findsOneWidget);
+    expect(find.text('Masaje'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('filter_service')));
     await tester.pumpAndSettle();

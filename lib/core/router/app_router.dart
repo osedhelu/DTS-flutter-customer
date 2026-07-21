@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
-import '../../features/cart/presentation/screens/cart_screen.dart';
 import '../../features/catalog/presentation/screens/catalog_screen.dart';
 import '../../features/catalog/presentation/screens/product_detail_screen.dart';
 import '../../features/catalog/presentation/screens/service_detail_screen.dart';
@@ -21,12 +20,61 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/stores/presentation/screens/store_detail_screen.dart';
 import '../../features/shell/presentation/screens/customer_shell_screen.dart';
 import '../../features/tracking/presentation/screens/tracking_map_screen.dart';
+import '../debug/agent_debug_log.dart';
 import '../di/providers.dart';
 
 class AuthRouterListenable extends ChangeNotifier {
   AuthRouterListenable(this._ref) {
-    _ref.listen<AsyncValue<bool>>(authStateProvider, (_, __) {
-      notifyListeners();
+    _ref.listen<AsyncValue<bool>>(authStateProvider, (prev, next) {
+      if (next.isLoading) {
+        // #region agent log
+        agentDebugLog(
+          hypothesisId: 'A',
+          location: 'app_router.dart:AuthRouterListenable',
+          message: 'SKIP notify on loading',
+          data: {
+            'prev': prev?.toString(),
+            'next': next.toString(),
+          },
+          runId: 'post-fix-3',
+        );
+        // #endregion
+        return;
+      }
+      final prevAuth = prev?.asData?.value;
+      final nextAuth = next.asData?.value;
+      if (prev != null &&
+          prev.hasValue &&
+          next.hasValue &&
+          prevAuth == nextAuth) {
+        // #region agent log
+        agentDebugLog(
+          hypothesisId: 'I',
+          location: 'app_router.dart:AuthRouterListenable',
+          message: 'SKIP notify — auth bool unchanged',
+          data: {'auth': nextAuth},
+          runId: 'post-fix-3',
+        );
+        // #endregion
+        return;
+      }
+      // #region agent log
+      agentDebugLog(
+        hypothesisId: 'A',
+        location: 'app_router.dart:AuthRouterListenable',
+        message: 'authState changed → post-frame notifyListeners',
+        data: {
+          'prev': prev?.toString(),
+          'next': next.toString(),
+          'prevAuth': prevAuth,
+          'nextAuth': nextAuth,
+        },
+        runId: 'post-fix-3',
+      );
+      // #endregion
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (hasListeners) notifyListeners();
+      });
     });
   }
 
@@ -41,28 +89,82 @@ final authRouterListenableProvider = Provider<AuthRouterListenable>((ref) {
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ref.watch(authRouterListenableProvider);
+  ref.keepAlive();
+
+  // #region agent log
+  agentDebugLog(
+    hypothesisId: 'B',
+    location: 'app_router.dart:appRouterProvider',
+    message: 'Creating NEW GoRouter instance',
+    data: {
+      'refreshHash': refresh.hashCode,
+      'auth': ref.read(authStateProvider).toString(),
+    },
+    runId: 'post-fix-3',
+  );
+  // #endregion
 
   return GoRouter(
-    initialLocation: '/login',
+    // Hipótesis U/V: un solo Navigator desde el arranque (ruta splash).
+    // Nunca sustituir MaterialApp ↔ MaterialApp.router.
+    initialLocation: '/splash',
     refreshListenable: refresh,
     redirect: (context, state) {
       final auth = ref.read(authStateProvider);
       final loc = state.matchedLocation;
-      final isPublic = loc == '/login' ||
+      final full = state.uri.toString();
+      final isAuthGate = loc == '/splash';
+      final isPublic = isAuthGate ||
+          loc == '/login' ||
           loc == '/register' ||
           loc == '/forgot-password';
 
-      return auth.when(
-        data: (isAuthenticated) {
-          if (!isAuthenticated && !isPublic) return '/login';
-          if (isAuthenticated && isPublic) return '/home';
-          return null;
+      String? result;
+      if (!auth.hasValue && !auth.hasError) {
+        result = isAuthGate ? null : '/splash';
+      } else if (auth.hasError) {
+        result = loc == '/login' ? null : '/login';
+      } else {
+        final isAuthenticated = auth.requireValue;
+        if (isAuthGate) {
+          result = isAuthenticated ? '/home' : '/login';
+        } else if (!isAuthenticated && !isPublic) {
+          result = '/login';
+        } else if (isAuthenticated &&
+            (loc == '/login' ||
+                loc == '/register' ||
+                loc == '/forgot-password')) {
+          result = '/home';
+        } else {
+          result = null;
+        }
+      }
+
+      // #region agent log
+      agentDebugLog(
+        hypothesisId: 'U',
+        location: 'app_router.dart:redirect',
+        message: 'redirect evaluated',
+        data: {
+          'loc': loc,
+          'fullUri': full,
+          'isPublic': isPublic,
+          'auth': auth.toString(),
+          'result': result,
         },
-        loading: () => null,
-        error: (_, __) => '/login',
+        runId: 'post-fix-3',
       );
+      // #endregion
+
+      return result;
     },
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
@@ -77,6 +179,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
+          // #region agent log
+          agentDebugLog(
+            hypothesisId: 'D',
+            location: 'app_router.dart:StatefulShellRoute.builder',
+            message: 'Shell builder',
+            data: {
+              'uri': state.uri.toString(),
+              'branchIndex': navigationShell.currentIndex,
+              'matched': state.matchedLocation,
+            },
+            runId: 'post-fix-3',
+          );
+          // #endregion
           return CustomerShellScreen(navigationShell: navigationShell);
         },
         branches: [
@@ -118,6 +233,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/cart',
+                builder: (context, state) => const ShellCartScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/profile',
                 builder: (context, state) => const ShellProfileScreen(),
                 routes: [
@@ -131,7 +254,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      // Compat: /stores -> /home
       GoRoute(
         path: '/stores',
         redirect: (_, __) => '/home',
@@ -186,10 +308,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(
-        path: '/cart',
-        builder: (context, state) => const CartScreen(),
-      ),
-      GoRoute(
         path: '/checkout',
         builder: (context, state) => const CheckoutScreen(),
         routes: [
@@ -212,14 +330,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HelpScreen(),
       ),
       GoRoute(
-        path: '/orders/:orderId/tracking',
+        path: '/tracking/:orderId',
         builder: (context, state) {
           final orderId = int.parse(state.pathParameters['orderId']!);
           return TrackingMapScreen(orderId: orderId);
         },
       ),
       GoRoute(
-        path: '/orders/:orderId/service-tracking',
+        path: '/service-tracking/:orderId',
         builder: (context, state) {
           final orderId = int.parse(state.pathParameters['orderId']!);
           return ServiceOrderTrackingScreen(orderId: orderId);

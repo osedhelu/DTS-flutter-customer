@@ -49,8 +49,12 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>DTS usa tu ubicación para mostrar el mapa y elegir la dirección de entrega.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>DTS usa tu ubicación para mostrar el mapa y elegir la dirección de entrega.</string>
 	<key>GIDClientID</key>
-	<string>887878350921-fknvj4slij2j7u9tc3vrie8j7bseh3pj.apps.googleusercontent.com</string>
+	<string>1015036938407-5sv7g0c6ujt98g2imkq3u6qlddolij9s.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -58,7 +62,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.887878350921-fknvj4slij2j7u9tc3vrie8j7bseh3pj</string>
+				<string>com.googleusercontent.apps.1015036938407-5sv7g0c6ujt98g2imkq3u6qlddolij9s</string>
 			</array>
 		</dict>
 	</array>
