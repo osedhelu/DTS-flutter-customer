@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/utils/pagination.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/product_detail.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../models/category_dto.dart';
 import '../models/product_dto.dart';
@@ -17,13 +18,16 @@ class CatalogRemoteDataSource {
   }) async {
     final query = <String, dynamic>{};
     if (filters?.productType != null) {
-      query['product_type'] = productTypeToApi(filters!.productType!);
+      query['type'] = productTypeToApi(filters!.productType!);
     }
     if (filters?.categoryId != null) {
-      query['category_id'] = filters!.categoryId;
+      query['category'] = filters!.categoryId;
     }
     if (filters?.subcategoryId != null) {
-      query['subcategory_id'] = filters!.subcategoryId;
+      query['subcategory'] = filters!.subcategoryId;
+    }
+    if (filters?.search != null && filters!.search!.trim().isNotEmpty) {
+      query['search'] = filters.search!.trim();
     }
 
     final response = await _dio.get<dynamic>(
@@ -31,6 +35,13 @@ class CatalogRemoteDataSource {
       queryParameters: query.isEmpty ? null : query,
     );
     return parsePaginatedList(response.data, ProductDto.fromJson);
+  }
+
+  Future<ProductDetail> fetchProductDetail(int storeId, int productId) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/stores/$storeId/products/$productId/public/',
+    );
+    return productDetailFromPublicJson(response.data!);
   }
 
   Future<List<CategoryDto>> fetchCategories(int storeId) async {

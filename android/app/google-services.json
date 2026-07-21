@@ -7,14 +7,14 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:887878350921:android:6cecda7e50f0414107a798",
+        "mobilesdk_app_id": "1:887878350921:android:e8b2928210d7e90f07a798",
         "android_client_info": {
           "package_name": "com.osedhelu.dts"
         }
       },
       "oauth_client": [
         {
-          "client_id": "887878350921-lmgeu34ok80j945ent7jc3phqgcsprer.apps.googleusercontent.com",
+          "client_id": "887878350921-d0dd5ihrssqan548n4csi07fr647gs9f.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.osedhelu.dts",
@@ -39,7 +39,7 @@
               "client_type": 3
             },
             {
-              "client_id": "887878350921-nefem02td9h6vouu22thtca9qv7akah8.apps.googleusercontent.com",
+              "client_id": "887878350921-fknvj4slij2j7u9tc3vrie8j7bseh3pj.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.osedhelu.dts"

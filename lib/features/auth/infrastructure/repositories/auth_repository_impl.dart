@@ -48,6 +48,12 @@ class AuthRepositoryImpl implements AuthRepository {
     return _persistSession(dto);
   }
 
+  @override
+  Future<AuthSession> signInWithApple({required String idToken}) async {
+    final dto = await _remoteDataSource.signInWithApple(idToken: idToken);
+    return _persistSession(dto);
+  }
+
   Future<AuthSession> _persistSession(AuthTokensDto dto) async {
     final session = dto.toSession();
     await _tokenStorage.saveTokens(

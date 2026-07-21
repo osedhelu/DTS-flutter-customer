@@ -7,10 +7,15 @@ class Order extends Equatable {
     required this.status,
     required this.total,
     required this.orderType,
+    this.storeName = '',
     this.serviceAddress,
+    this.deliveryAddress,
     this.customerNotes,
     this.scheduledAt,
     this.durationMinutes,
+    this.driverName,
+    this.driverPhone,
+    this.itemCount = 0,
   });
 
   final int id;
@@ -18,12 +23,25 @@ class Order extends Equatable {
   final String status;
   final double total;
   final String orderType;
+  final String storeName;
   final String? serviceAddress;
+  final String? deliveryAddress;
   final String? customerNotes;
   final DateTime? scheduledAt;
   final int? durationMinutes;
+  final String? driverName;
+  final String? driverPhone;
+  final int itemCount;
 
   bool get isService => orderType.toUpperCase() == 'SERVICE';
+
+  bool get isActive =>
+      status != 'delivered' &&
+      status != 'cancelled' &&
+      status != 'rejected';
+
+  String get addressLabel =>
+      deliveryAddress ?? serviceAddress ?? '';
 
   @override
   List<Object?> get props => [
@@ -32,10 +50,9 @@ class Order extends Equatable {
         status,
         total,
         orderType,
-        serviceAddress,
-        customerNotes,
-        scheduledAt,
-        durationMinutes,
+        storeName,
+        deliveryAddress,
+        driverName,
       ];
 }
 
@@ -53,10 +70,22 @@ class CreateOrderParams {
   const CreateOrderParams({
     required this.storeId,
     required this.items,
+    this.deliveryAddress,
+    this.customerNotes,
+    this.latitude,
+    this.longitude,
+    this.paymentMethodId,
+    this.couponCode,
   });
 
   final int storeId;
   final List<CreateOrderItem> items;
+  final String? deliveryAddress;
+  final String? customerNotes;
+  final double? latitude;
+  final double? longitude;
+  final int? paymentMethodId;
+  final String? couponCode;
 }
 
 class CreateServiceOrderParams {
@@ -68,6 +97,8 @@ class CreateServiceOrderParams {
     this.scheduledAt,
     this.latitude,
     this.longitude,
+    this.paymentMethodId,
+    this.couponCode,
   });
 
   final int storeId;
@@ -77,4 +108,6 @@ class CreateServiceOrderParams {
   final DateTime? scheduledAt;
   final double? latitude;
   final double? longitude;
+  final int? paymentMethodId;
+  final String? couponCode;
 }

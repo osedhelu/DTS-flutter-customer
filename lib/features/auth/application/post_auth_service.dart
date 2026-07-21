@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -17,13 +18,17 @@ class PostAuthService {
   final RegisterFcmTokenUseCase _registerFcmTokenUseCase;
   final FirebaseService _firebaseService;
 
-  Future<void> complete(WidgetRef ref) async {
-    if (kIsWeb) {
-      ref.invalidate(authStateProvider);
-      return;
-    }
+  /// Invalida sesión y navega; el registro push corre en segundo plano.
+  void complete(WidgetRef ref) {
+    ref.invalidate(authStateProvider);
+    unawaited(_registerPushInBackground());
+  }
+
+  Future<void> _registerPushInBackground() async {
+    if (kIsWeb) return;
 
     try {
+      await _firebaseService.requestNotificationPermissionIfNeeded();
       final token = await _firebaseService.getFcmToken();
       if (token != null && token.isNotEmpty) {
         await _registerFcmTokenUseCase.call(
@@ -34,8 +39,6 @@ class PostAuthService {
     } catch (_) {
       // Push es best-effort; no bloquear login si FCM falla.
     }
-
-    ref.invalidate(authStateProvider);
   }
 
   String _platformName() {

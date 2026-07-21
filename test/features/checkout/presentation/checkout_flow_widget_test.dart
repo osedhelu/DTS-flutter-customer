@@ -4,6 +4,8 @@ import 'package:dts_customer/features/catalog/domain/entities/product.dart';
 import 'package:dts_customer/features/checkout/domain/entities/order.dart';
 import 'package:dts_customer/features/checkout/domain/usecases/create_order_usecase.dart';
 import 'package:dts_customer/features/checkout/presentation/screens/checkout_screen.dart';
+import 'package:dts_customer/features/profile/domain/entities/customer_profile.dart';
+import 'package:dts_customer/features/profile/infrastructure/datasources/customer_profile_remote_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -13,8 +15,12 @@ import '../../../helpers/test_providers.dart';
 
 class MockCreateOrderUseCase extends Mock implements CreateOrderUseCase {}
 
+class MockCustomerProfileRemoteDataSource extends Mock
+    implements CustomerProfileRemoteDataSource {}
+
 void main() {
   late MockCreateOrderUseCase createOrderUseCase;
+  late MockCustomerProfileRemoteDataSource profileDs;
 
   setUpAll(() {
     registerFallbackValue(
@@ -27,9 +33,23 @@ void main() {
 
   setUp(() {
     createOrderUseCase = MockCreateOrderUseCase();
+    profileDs = MockCustomerProfileRemoteDataSource();
+    when(() => profileDs.getProfile()).thenAnswer(
+      (_) async => const CustomerProfile(
+        fullName: 'Ana',
+        phone: '300',
+        photoUrl: '',
+        defaultAddress: 'Calle 1 #2-3',
+      ),
+    );
+    when(() => profileDs.listAddresses()).thenAnswer((_) async => []);
   });
 
   testWidgets('checkout_flow_widget_test', (tester) async {
+    tester.view.physicalSize = const Size(400, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     when(() => createOrderUseCase(any())).thenAnswer(
       (_) async => const Order(
         id: 42,
@@ -60,6 +80,7 @@ void main() {
       buildTestApp(
         overrides: [
           createOrderUseCaseProvider.overrideWithValue(createOrderUseCase),
+          customerProfileRemoteDataSourceProvider.overrideWithValue(profileDs),
           cartNotifierProvider.overrideWith(
             (ref) => CartNotifier(ref.watch(addItemUseCaseProvider))
               ..addProduct(
@@ -79,11 +100,14 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('checkout_total')), findsOneWidget);
     expect(find.text('Total: \$15.00'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('confirm_order_button')));
+    await tester.enterText(find.byType(TextField).first, 'Calle 1 #2-3');
+    await tester.tap(find.text('Confirmar pedido').last);
     await tester.pump();
     await tester.pumpAndSettle();
 

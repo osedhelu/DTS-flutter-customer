@@ -8,20 +8,22 @@ class MockFirebaseMessaging extends Mock implements FirebaseMessaging {}
 void main() {
   test('firebase_init_test', () async {
     final messaging = MockFirebaseMessaging();
-    when(() => messaging.requestPermission()).thenAnswer((_) async => const NotificationSettings(
-          authorizationStatus: AuthorizationStatus.authorized,
-          alert: AppleNotificationSetting.enabled,
-          announcement: AppleNotificationSetting.notSupported,
-          badge: AppleNotificationSetting.enabled,
-          carPlay: AppleNotificationSetting.notSupported,
-          lockScreen: AppleNotificationSetting.enabled,
-          notificationCenter: AppleNotificationSetting.enabled,
-          showPreviews: AppleShowPreviewSetting.always,
-          sound: AppleNotificationSetting.enabled,
-          criticalAlert: AppleNotificationSetting.notSupported,
-          timeSensitive: AppleNotificationSetting.notSupported,
-          providesAppNotificationSettings: AppleNotificationSetting.notSupported,
-        ));
+    when(() => messaging.requestPermission()).thenAnswer(
+      (_) async => const NotificationSettings(
+        authorizationStatus: AuthorizationStatus.authorized,
+        alert: AppleNotificationSetting.enabled,
+        announcement: AppleNotificationSetting.notSupported,
+        badge: AppleNotificationSetting.enabled,
+        carPlay: AppleNotificationSetting.notSupported,
+        lockScreen: AppleNotificationSetting.enabled,
+        notificationCenter: AppleNotificationSetting.enabled,
+        showPreviews: AppleShowPreviewSetting.always,
+        sound: AppleNotificationSetting.enabled,
+        criticalAlert: AppleNotificationSetting.notSupported,
+        timeSensitive: AppleNotificationSetting.notSupported,
+        providesAppNotificationSettings: AppleNotificationSetting.notSupported,
+      ),
+    );
     when(() => messaging.getToken()).thenAnswer((_) async => 'mock-token');
 
     final service = FirebaseServiceImpl(
@@ -30,6 +32,9 @@ void main() {
     );
 
     await service.initialize();
+    verifyNever(() => messaging.requestPermission());
+
+    await service.requestNotificationPermissionIfNeeded();
     final token = await service.getFcmToken();
 
     expect(token, 'mock-token');

@@ -48,7 +48,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               phone: _phoneController.text.trim(),
             ),
           );
-      await ref.read(postAuthServiceProvider).complete(ref);
+      ref.read(postAuthServiceProvider).complete(ref);
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'No se pudo crear la cuenta');
@@ -58,7 +58,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
 
-    if (mounted) context.go('/stores');
+    if (mounted) context.go('/home');
   }
 
   @override

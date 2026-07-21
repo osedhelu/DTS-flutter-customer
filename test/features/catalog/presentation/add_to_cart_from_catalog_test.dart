@@ -1,11 +1,11 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-
-import 'package:dts_customer/core/di/providers.dart';
 import 'package:dts_customer/features/cart/application/providers/cart_providers.dart';
+import 'package:dts_customer/features/catalog/application/providers/catalog_providers.dart';
 import 'package:dts_customer/features/catalog/domain/entities/product.dart';
+import 'package:dts_customer/features/catalog/domain/entities/product_detail.dart';
 import 'package:dts_customer/features/catalog/presentation/screens/product_detail_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 import '../../../helpers/test_providers.dart';
 
@@ -21,15 +21,21 @@ void main() {
   testWidgets('add_to_cart_from_catalog_test', (tester) async {
     await tester.pumpWidget(
       buildTestApp(
+        overrides: [
+          productDetailProvider((storeId: 1, productId: 5)).overrideWith(
+            (ref) async => const ProductDetail(product: product),
+          ),
+        ],
         child: const MaterialApp(
           home: ProductDetailScreen(
             storeId: 1,
             storeName: 'Burger',
-            product: product,
+            productId: 5,
           ),
         ),
       ),
     );
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('add_to_cart_button')));
     await tester.pumpAndSettle();

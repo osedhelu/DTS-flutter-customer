@@ -8,6 +8,7 @@ class StoreDto {
     this.logoUrl,
     this.address,
     this.isOpen = true,
+    this.vertical,
   });
 
   final int id;
@@ -16,6 +17,7 @@ class StoreDto {
   final String? logoUrl;
   final String? address;
   final bool isOpen;
+  final String? vertical;
 
   factory StoreDto.fromJson(Map<String, dynamic> json) {
     return StoreDto(
@@ -25,6 +27,7 @@ class StoreDto {
       logoUrl: json['logo_url'] as String?,
       address: json['address'] as String?,
       isOpen: json['is_open'] as bool? ?? true,
+      vertical: json['vertical'] as String?,
     );
   }
 
@@ -35,5 +38,6 @@ class StoreDto {
         logoUrl: logoUrl,
         address: address,
         isOpen: isOpen,
+        vertical: vertical,
       );
 }

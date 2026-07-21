@@ -25,7 +25,7 @@ abstract final class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAiWdADnizuPi_5PyH3yNmV523CNlu6jMo',
-    appId: '1:887878350921:android:6cecda7e50f0414107a798',
+    appId: '1:887878350921:android:e8b2928210d7e90f07a798',
     messagingSenderId: '887878350921',
     projectId: 'discorp-4a37b',
     storageBucket: 'discorp-4a37b.firebasestorage.app',
@@ -33,12 +33,12 @@ abstract final class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCGhDym4H6gaJe8zIUZEA6ln0xDl1o3Hxo',
-    appId: '1:887878350921:ios:cb3b0e6900a219ff07a798',
+    appId: '1:887878350921:ios:e07dd9e87e6a7b4707a798',
     messagingSenderId: '887878350921',
     projectId: 'discorp-4a37b',
     storageBucket: 'discorp-4a37b.firebasestorage.app',
     iosBundleId: 'com.osedhelu.dts',
     iosClientId:
-        '887878350921-nefem02td9h6vouu22thtca9qv7akah8.apps.googleusercontent.com',
+        '887878350921-fknvj4slij2j7u9tc3vrie8j7bseh3pj.apps.googleusercontent.com',
   );
 }

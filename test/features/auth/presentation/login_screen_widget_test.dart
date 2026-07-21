@@ -23,6 +23,22 @@ class MockDeviceTokenRepository extends Mock implements DeviceTokenRepository {}
 PostAuthService _testPostAuthService() {
   final messaging = MockFirebaseMessaging();
   when(() => messaging.getToken()).thenAnswer((_) async => null);
+  when(() => messaging.requestPermission()).thenAnswer(
+    (_) async => const NotificationSettings(
+      authorizationStatus: AuthorizationStatus.authorized,
+      alert: AppleNotificationSetting.enabled,
+      announcement: AppleNotificationSetting.notSupported,
+      badge: AppleNotificationSetting.enabled,
+      carPlay: AppleNotificationSetting.notSupported,
+      lockScreen: AppleNotificationSetting.enabled,
+      notificationCenter: AppleNotificationSetting.enabled,
+      showPreviews: AppleShowPreviewSetting.always,
+      sound: AppleNotificationSetting.enabled,
+      criticalAlert: AppleNotificationSetting.notSupported,
+      timeSensitive: AppleNotificationSetting.notSupported,
+      providesAppNotificationSettings: AppleNotificationSetting.notSupported,
+    ),
+  );
   return PostAuthService(
     registerFcmTokenUseCase: RegisterFcmTokenUseCase(MockDeviceTokenRepository()),
     firebaseService: FirebaseServiceImpl(
@@ -59,7 +75,7 @@ void main() {
       routes: [
         GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
         GoRoute(
-          path: '/stores',
+          path: '/home',
           builder: (_, __) => const Scaffold(body: Text('stores-page')),
         ),
       ],

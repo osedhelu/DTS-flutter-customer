@@ -45,4 +45,20 @@ class AuthRemoteDataSource {
 
     return AuthTokensDto.fromJson(response.data!);
   }
+
+  Future<AuthTokensDto> signInWithApple({required String idToken}) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/accounts/auth/apple/',
+      data: {'id_token': idToken},
+    );
+
+    return AuthTokensDto.fromJson(response.data!);
+  }
+
+  Future<void> requestPasswordReset(String email) async {
+    await _dio.post<Map<String, dynamic>>(
+      '/accounts/password-reset/request/',
+      data: {'email': email},
+    );
+  }
 }

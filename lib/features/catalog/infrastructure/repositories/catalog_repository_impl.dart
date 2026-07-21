@@ -1,5 +1,6 @@
 import '../../domain/entities/category.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/product_detail.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../datasources/catalog_remote_datasource.dart';
 
@@ -22,5 +23,10 @@ class CatalogRepositoryImpl implements CatalogRepository {
   }) async {
     final dtos = await _remoteDataSource.fetchProducts(storeId, filters: filters);
     return dtos.map((dto) => dto.toEntity()).toList();
+  }
+
+  @override
+  Future<ProductDetail> getProductDetail(int storeId, int productId) {
+    return _remoteDataSource.fetchProductDetail(storeId, productId);
   }
 }

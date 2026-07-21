@@ -6,20 +6,23 @@ class CartItem extends Equatable {
   const CartItem({
     required this.product,
     required this.quantity,
+    this.notes,
   });
 
   final Product product;
   final int quantity;
+  final String? notes;
 
   double get subtotal => product.price * quantity;
 
-  CartItem copyWith({int? quantity}) => CartItem(
+  CartItem copyWith({int? quantity, String? notes}) => CartItem(
         product: product,
         quantity: quantity ?? this.quantity,
+        notes: notes ?? this.notes,
       );
 
   @override
-  List<Object?> get props => [product, quantity];
+  List<Object?> get props => [product, quantity, notes];
 }
 
 class Cart extends Equatable {

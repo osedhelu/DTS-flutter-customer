@@ -10,6 +10,7 @@ class TrackingData extends Equatable {
     this.destinationLongitude,
     this.updatedAt,
     this.isLive = true,
+    this.etaMinutes,
   });
 
   final int orderId;
@@ -20,6 +21,7 @@ class TrackingData extends Equatable {
   final double? destinationLongitude;
   final DateTime? updatedAt;
   final bool isLive;
+  final int? etaMinutes;
 
   static const _liveStatuses = {
     'driver_assigned',
@@ -43,5 +45,6 @@ class TrackingData extends Equatable {
         destinationLongitude,
         updatedAt,
         isLive,
+        etaMinutes,
       ];
 }

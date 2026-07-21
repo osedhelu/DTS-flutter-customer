@@ -9,6 +9,8 @@ typedef FirebaseBackgroundHandler = Future<void> Function(RemoteMessage message)
 abstract class FirebaseService {
   Future<void> initialize();
 
+  Future<void> requestNotificationPermissionIfNeeded();
+
   Future<String?> getFcmToken();
 
   Stream<RemoteMessage> get onMessage;
@@ -36,7 +38,13 @@ class FirebaseServiceImpl implements FirebaseService {
   @override
   Future<void> initialize() async {
     if (kIsWeb) return;
+    if (Firebase.apps.isNotEmpty) return;
     await _initializeApp();
+  }
+
+  @override
+  Future<void> requestNotificationPermissionIfNeeded() async {
+    if (kIsWeb) return;
     await _messaging.requestPermission();
   }
 

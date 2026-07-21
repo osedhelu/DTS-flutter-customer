@@ -7,12 +7,14 @@ class AddItemParams {
     required this.storeName,
     required this.product,
     this.quantity = 1,
+    this.notes,
   });
 
   final int storeId;
   final String storeName;
   final Product product;
   final int quantity;
+  final String? notes;
 }
 
 class AddItemUseCase {
@@ -40,9 +42,16 @@ class AddItemUseCase {
       final existing = updatedItems[existingIndex];
       updatedItems[existingIndex] = existing.copyWith(
         quantity: existing.quantity + params.quantity,
+        notes: params.notes ?? existing.notes,
       );
     } else {
-      updatedItems.add(CartItem(product: product, quantity: params.quantity));
+      updatedItems.add(
+        CartItem(
+          product: product,
+          quantity: params.quantity,
+          notes: params.notes,
+        ),
+      );
     }
 
     return baseCart.copyWith(items: updatedItems);

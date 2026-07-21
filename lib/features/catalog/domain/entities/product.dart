@@ -14,9 +14,9 @@ ProductType productTypeFromApi(String value) {
 String productTypeToApi(ProductType type) {
   switch (type) {
     case ProductType.service:
-      return 'SERVICE';
+      return 'service';
     case ProductType.physical:
-      return 'PHYSICAL';
+      return 'physical';
   }
 }
 
@@ -32,7 +32,9 @@ class Product extends Equatable {
     this.description,
     this.durationMinutes,
     this.primaryImageUrl,
+    this.promotionBadge,
     this.stock = 0,
+    this.dynamicValues = const {},
   });
 
   final int id;
@@ -45,7 +47,9 @@ class Product extends Equatable {
   final String? description;
   final int? durationMinutes;
   final String? primaryImageUrl;
+  final String? promotionBadge;
   final int stock;
+  final Map<String, dynamic> dynamicValues;
 
   bool get isService => productType == ProductType.service;
 
@@ -62,5 +66,7 @@ class Product extends Equatable {
         durationMinutes,
         primaryImageUrl,
         stock,
+        promotionBadge,
+        dynamicValues,
       ];
 }

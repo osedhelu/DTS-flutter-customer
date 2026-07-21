@@ -10,6 +10,7 @@ class TrackingDto {
     this.destinationLongitude,
     this.updatedAt,
     this.isLive = false,
+    this.etaMinutes,
   });
 
   final int orderId;
@@ -20,6 +21,7 @@ class TrackingDto {
   final double? destinationLongitude;
   final DateTime? updatedAt;
   final bool isLive;
+  final int? etaMinutes;
 
   factory TrackingDto.fromJson(Map<String, dynamic> json) {
     double? driverLat = _toDouble(json['driver_latitude'] ?? json['latitude']);
@@ -52,6 +54,7 @@ class TrackingDto {
           : null,
       isLive: json['is_live'] as bool? ??
           const {'driver_assigned', 'picked_up', 'on_the_way'}.contains(status),
+      etaMinutes: json['eta_minutes'] as int?,
     );
   }
 
@@ -69,5 +72,6 @@ class TrackingDto {
         destinationLongitude: destinationLongitude,
         updatedAt: updatedAt,
         isLive: isLive,
+        etaMinutes: etaMinutes,
       );
 }

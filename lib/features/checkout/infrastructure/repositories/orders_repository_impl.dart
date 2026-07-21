@@ -9,6 +9,12 @@ class OrdersRepositoryImpl implements OrdersRepository {
   final OrdersRemoteDataSource _remoteDataSource;
 
   @override
+  Future<List<Order>> listOrders({String? status}) async {
+    final dtos = await _remoteDataSource.listOrders(status: status);
+    return dtos.map((d) => d.toEntity()).toList();
+  }
+
+  @override
   Future<Order> createOrder(CreateOrderParams params) async {
     final dto = await _remoteDataSource.createOrder(params);
     return dto.toEntity();
@@ -23,6 +29,12 @@ class OrdersRepositoryImpl implements OrdersRepository {
   @override
   Future<Order> getOrder(int orderId) async {
     final dto = await _remoteDataSource.fetchOrder(orderId);
+    return dto.toEntity();
+  }
+
+  @override
+  Future<Order> cancelOrder(int orderId) async {
+    final dto = await _remoteDataSource.cancelOrder(orderId);
     return dto.toEntity();
   }
 }

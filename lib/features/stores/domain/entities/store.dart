@@ -8,6 +8,7 @@ class Store extends Equatable {
     this.logoUrl,
     this.address,
     this.isOpen = true,
+    this.vertical,
   });
 
   final int id;
@@ -16,7 +17,11 @@ class Store extends Equatable {
   final String? logoUrl;
   final String? address;
   final bool isOpen;
+  final String? vertical;
+
+  bool get isServicesVertical =>
+      (vertical ?? '').toUpperCase() == 'SERVICES';
 
   @override
-  List<Object?> get props => [id, name, description, logoUrl, address, isOpen];
+  List<Object?> get props => [id, name, description, logoUrl, address, isOpen, vertical];
 }

@@ -4,6 +4,8 @@ import 'package:dts_customer/features/catalog/domain/entities/product.dart';
 import 'package:dts_customer/features/checkout/domain/entities/order.dart';
 import 'package:dts_customer/features/checkout/domain/usecases/create_service_order_usecase.dart';
 import 'package:dts_customer/features/checkout/presentation/screens/service_checkout_screen.dart';
+import 'package:dts_customer/features/profile/domain/entities/customer_profile.dart';
+import 'package:dts_customer/features/profile/infrastructure/datasources/customer_profile_remote_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -14,8 +16,12 @@ import '../../../helpers/test_providers.dart';
 class MockCreateServiceOrderUseCase extends Mock
     implements CreateServiceOrderUseCase {}
 
+class MockCustomerProfileRemoteDataSource extends Mock
+    implements CustomerProfileRemoteDataSource {}
+
 void main() {
   late MockCreateServiceOrderUseCase createServiceOrderUseCase;
+  late MockCustomerProfileRemoteDataSource profileDs;
 
   setUpAll(() {
     registerFallbackValue(
@@ -29,9 +35,15 @@ void main() {
 
   setUp(() {
     createServiceOrderUseCase = MockCreateServiceOrderUseCase();
+    profileDs = MockCustomerProfileRemoteDataSource();
+    when(() => profileDs.listAddresses()).thenAnswer((_) async => []);
   });
 
   testWidgets('service_checkout_flow_test', (tester) async {
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     when(() => createServiceOrderUseCase(any())).thenAnswer(
       (_) async => const Order(
         id: 77,
@@ -64,6 +76,7 @@ void main() {
         overrides: [
           createServiceOrderUseCaseProvider
               .overrideWithValue(createServiceOrderUseCase),
+          customerProfileRemoteDataSourceProvider.overrideWithValue(profileDs),
           cartNotifierProvider.overrideWith(
             (ref) => CartNotifier(ref.watch(addItemUseCaseProvider))
               ..addProduct(
@@ -92,7 +105,8 @@ void main() {
       find.byKey(const Key('service_notes_field')),
       'Timbre 3',
     );
-    await tester.tap(find.byKey(const Key('confirm_service_order_button')));
+    await tester.ensureVisible(find.text('Confirmar solicitud'));
+    await tester.tap(find.text('Confirmar solicitud'));
     await tester.pump();
     await tester.pumpAndSettle();
 

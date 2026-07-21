@@ -50,7 +50,7 @@
 		<string>remote-notification</string>
 	</array>
 	<key>GIDClientID</key>
-	<string>887878350921-nefem02td9h6vouu22thtca9qv7akah8.apps.googleusercontent.com</string>
+	<string>887878350921-fknvj4slij2j7u9tc3vrie8j7bseh3pj.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -58,7 +58,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.887878350921-nefem02td9h6vouu22thtca9qv7akah8</string>
+				<string>com.googleusercontent.apps.887878350921-fknvj4slij2j7u9tc3vrie8j7bseh3pj</string>
 			</array>
 		</dict>
 	</array>

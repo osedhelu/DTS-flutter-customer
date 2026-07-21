@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/di/repository_providers.dart';
+import '../../../../core/widgets/widgets.dart';
 import '../../domain/entities/tracking_data.dart';
 
 typedef MapWidgetBuilder = Widget Function({
@@ -193,29 +195,34 @@ class _TrackingMapScreenState extends ConsumerState<TrackingMapScreen> {
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline),
             tooltip: 'Chat',
-            onPressed: () {
-              // Route registered when chat feature lands on customer.
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => _CustomerOrderChatPlaceholder(
-                    orderId: widget.orderId,
-                  ),
-                ),
-              );
-            },
+            onPressed: () => context.push('/orders/${widget.orderId}/chat'),
           ),
         ],
       ),
       body: _loading && _tracking == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const DtsLoading()
           : Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Text(
-                    statusLabel,
-                    key: const Key('tracking_status'),
-                    style: Theme.of(context).textTheme.titleMedium,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        statusLabel,
+                        key: const Key('tracking_status'),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      if (_tracking?.etaMinutes != null)
+                        Text(
+                          'Llega en ~${_tracking!.etaMinutes} min',
+                          key: const Key('tracking_eta'),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                    ],
                   ),
                 ),
                 Expanded(
@@ -241,111 +248,5 @@ class _TrackingMapScreenState extends ConsumerState<TrackingMapScreen> {
   LatLng? _latLng(double? lat, double? lng) {
     if (lat == null || lng == null) return null;
     return LatLng(lat, lng);
-  }
-}
-
-class _CustomerOrderChatPlaceholder extends ConsumerStatefulWidget {
-  const _CustomerOrderChatPlaceholder({required this.orderId});
-
-  final int orderId;
-
-  @override
-  ConsumerState<_CustomerOrderChatPlaceholder> createState() =>
-      _CustomerOrderChatPlaceholderState();
-}
-
-class _CustomerOrderChatPlaceholderState
-    extends ConsumerState<_CustomerOrderChatPlaceholder> {
-  final _controller = TextEditingController();
-  final _messages = <Map<String, dynamic>>[];
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _load() async {
-    try {
-      final dio = ref.read(apiClientProvider).dio;
-      final res = await dio.get('/orders/${widget.orderId}/messages/');
-      final list = (res.data as List).cast<dynamic>();
-      if (!mounted) return;
-      setState(() {
-        _messages
-          ..clear()
-          ..addAll(list.map((e) => Map<String, dynamic>.from(e as Map)));
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _send() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    try {
-      final dio = ref.read(apiClientProvider).dio;
-      final res = await dio.post(
-        '/orders/${widget.orderId}/messages/',
-        data: {'body': text},
-      );
-      _controller.clear();
-      if (!mounted) return;
-      setState(() {
-        _messages.add(Map<String, dynamic>.from(res.data as Map));
-      });
-    } catch (_) {}
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Chat #${widget.orderId}')),
-      body: Column(
-        children: [
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _messages.length,
-                    itemBuilder: (_, i) {
-                      final m = _messages[i];
-                      return ListTile(
-                        title: Text('${m['sender_role']}: ${m['body']}'),
-                        dense: true,
-                      );
-                    },
-                  ),
-          ),
-          SafeArea(
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Escribe un mensaje',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                    ),
-                  ),
-                ),
-                IconButton(onPressed: _send, icon: const Icon(Icons.send)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

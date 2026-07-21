@@ -1,5 +1,4 @@
 import '../entities/auth_session.dart';
-import '../repositories/auth_repository.dart';
 
 abstract class AuthRepository {
   Future<AuthSession> login({
@@ -15,6 +14,8 @@ abstract class AuthRepository {
   });
 
   Future<AuthSession> signInWithGoogle({required String idToken});
+
+  Future<AuthSession> signInWithApple({required String idToken});
 
   Future<void> logout();
 

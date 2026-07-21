@@ -1,17 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/firebase/firebase_service.dart';
+import '../../features/auth/domain/usecases/apple_sign_in_usecase.dart';
 import '../../features/auth/domain/usecases/google_sign_in_usecase.dart';
 import '../../features/auth/domain/usecases/login_usecase.dart';
 import '../../features/auth/domain/usecases/register_usecase.dart';
-import '../../features/cart/application/providers/cart_providers.dart';
-import '../../features/catalog/application/providers/catalog_providers.dart';
 import '../../features/checkout/domain/usecases/create_order_usecase.dart';
 import '../../features/checkout/domain/usecases/create_service_order_usecase.dart';
 import '../../features/notifications/application/push_notification_handler.dart';
 import '../../features/notifications/domain/usecases/register_fcm_token_usecase.dart';
-import '../../features/stores/application/providers/stores_providers.dart';
 import '../../features/tracking/domain/usecases/get_tracking_usecase.dart';
+import '../../features/profile/infrastructure/datasources/customer_profile_remote_datasource.dart';
+import '../../core/firebase/firebase_service.dart';
 import 'repository_providers.dart';
 
 export '../../features/cart/application/providers/cart_providers.dart';
@@ -29,6 +28,10 @@ final registerUseCaseProvider = Provider<RegisterUseCase>((ref) {
 
 final googleSignInUseCaseProvider = Provider<GoogleSignInUseCase>((ref) {
   return GoogleSignInUseCase(ref.watch(authRepositoryProvider));
+});
+
+final appleSignInUseCaseProvider = Provider<AppleSignInUseCase>((ref) {
+  return AppleSignInUseCase(ref.watch(authRepositoryProvider));
 });
 
 final authStateProvider = FutureProvider<bool>((ref) async {
@@ -63,3 +66,10 @@ final pushNotificationHandlerProvider = Provider<PushNotificationHandler>((ref) 
   ref.onDispose(handler.dispose);
   return handler;
 });
+
+final customerProfileRemoteDataSourceProvider =
+    Provider<CustomerProfileRemoteDataSource>((ref) {
+  return CustomerProfileRemoteDataSource(ref.watch(apiClientProvider).dio);
+});
+
+final connectivityOfflineProvider = StateProvider<bool>((ref) => false);
