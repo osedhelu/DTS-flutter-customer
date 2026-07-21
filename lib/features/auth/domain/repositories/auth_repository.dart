@@ -15,7 +15,11 @@ abstract class AuthRepository {
 
   Future<AuthSession> signInWithGoogle({required String idToken});
 
-  Future<AuthSession> signInWithApple({required String idToken});
+  Future<AuthSession> signInWithApple({
+    required String idToken,
+    String? email,
+    String? fullName,
+  });
 
   Future<void> logout();
 

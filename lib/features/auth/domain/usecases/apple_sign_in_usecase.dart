@@ -53,7 +53,16 @@ class AppleSignInUseCase {
       throw StateError('No se pudo obtener el token de Firebase');
     }
 
-    return _repository.signInWithApple(idToken: firebaseIdToken);
+    final fullNameParts = [
+      appleCredential.givenName,
+      appleCredential.familyName,
+    ].whereType<String>().map((part) => part.trim()).where((part) => part.isNotEmpty).toList();
+
+    return _repository.signInWithApple(
+      idToken: firebaseIdToken,
+      email: appleCredential.email,
+      fullName: fullNameParts.isEmpty ? null : fullNameParts.join(' '),
+    );
   }
 
   String _generateNonce([int length = 32]) {

@@ -75,16 +75,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Scaffold(
       body: Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0B3D2E), Color(0xFF145A43), Color(0xFFF7F8F6)],
-            stops: [0.0, 0.35, 0.35],
+            colors: [
+              scheme.primaryContainer,
+              scheme.surface,
+            ],
+            stops: const [0.0, 0.45],
           ),
         ),
         child: SafeArea(
@@ -113,7 +117,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   'DTS Delivery',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
+                    color: scheme.onPrimaryContainer,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -122,7 +126,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   'Pide en tus comercios favoritos',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: scheme.onPrimaryContainer.withValues(alpha: 0.86),
                   ),
                 ),
                 const SizedBox(height: 36),
@@ -216,7 +220,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: _isLoading ? null : () => context.go('/register'),
-                  child: const Text('¿Nuevo aquí? Crear cuenta'),
+                  child: Text(
+                    '¿Nuevo aquí? Crear cuenta',
+                    style: TextStyle(color: scheme.onSurface),
+                  ),
                 ),
               ],
             ),

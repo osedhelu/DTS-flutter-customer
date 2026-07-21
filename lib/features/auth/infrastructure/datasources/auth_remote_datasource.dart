@@ -46,10 +46,19 @@ class AuthRemoteDataSource {
     return AuthTokensDto.fromJson(response.data!);
   }
 
-  Future<AuthTokensDto> signInWithApple({required String idToken}) async {
+  Future<AuthTokensDto> signInWithApple({
+    required String idToken,
+    String? email,
+    String? fullName,
+  }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/accounts/auth/apple/',
-      data: {'id_token': idToken},
+      data: {
+        'id_token': idToken,
+        if (email != null && email.trim().isNotEmpty) 'email': email.trim(),
+        if (fullName != null && fullName.trim().isNotEmpty)
+          'full_name': fullName.trim(),
+      },
     );
 
     return AuthTokensDto.fromJson(response.data!);

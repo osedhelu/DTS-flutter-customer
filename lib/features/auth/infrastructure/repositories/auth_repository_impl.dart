@@ -1,4 +1,6 @@
 import '../../../../core/network/token_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../domain/entities/auth_session.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
@@ -8,11 +10,17 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl({
     required AuthRemoteDataSource remoteDataSource,
     required TokenStorage tokenStorage,
+    required GoogleSignIn googleSignIn,
+    required FirebaseAuth firebaseAuth,
   })  : _remoteDataSource = remoteDataSource,
-        _tokenStorage = tokenStorage;
+        _tokenStorage = tokenStorage,
+        _googleSignIn = googleSignIn,
+        _firebaseAuth = firebaseAuth;
 
   final AuthRemoteDataSource _remoteDataSource;
   final TokenStorage _tokenStorage;
+  final GoogleSignIn _googleSignIn;
+  final FirebaseAuth _firebaseAuth;
 
   @override
   Future<AuthSession> login({
@@ -49,8 +57,16 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<AuthSession> signInWithApple({required String idToken}) async {
-    final dto = await _remoteDataSource.signInWithApple(idToken: idToken);
+  Future<AuthSession> signInWithApple({
+    required String idToken,
+    String? email,
+    String? fullName,
+  }) async {
+    final dto = await _remoteDataSource.signInWithApple(
+      idToken: idToken,
+      email: email,
+      fullName: fullName,
+    );
     return _persistSession(dto);
   }
 
@@ -64,7 +80,15 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> logout() => _tokenStorage.clear();
+  Future<void> logout() async {
+    await _tokenStorage.clear();
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
+    try {
+      await _firebaseAuth.signOut();
+    } catch (_) {}
+  }
 
   @override
   Future<bool> isAuthenticated() async {

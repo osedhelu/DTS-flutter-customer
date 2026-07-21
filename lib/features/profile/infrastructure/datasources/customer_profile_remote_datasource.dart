@@ -14,6 +14,7 @@ class CustomerProfileRemoteDataSource {
     final j = res.data!;
     return CustomerProfile(
       fullName: j['full_name'] as String? ?? '',
+      email: j['email'] as String? ?? '',
       phone: j['phone'] as String? ?? '',
       photoUrl: j['photo_url'] as String? ?? '',
       defaultAddress: j['default_address'] as String? ?? '',
@@ -38,6 +39,7 @@ class CustomerProfileRemoteDataSource {
     final j = res.data!;
     return CustomerProfile(
       fullName: j['full_name'] as String? ?? '',
+      email: j['email'] as String? ?? '',
       phone: j['phone'] as String? ?? '',
       photoUrl: j['photo_url'] as String? ?? '',
       defaultAddress: j['default_address'] as String? ?? '',

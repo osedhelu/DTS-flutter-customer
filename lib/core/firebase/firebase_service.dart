@@ -24,7 +24,7 @@ class FirebaseServiceImpl implements FirebaseService {
   FirebaseServiceImpl({
     FirebaseMessaging? messaging,
     Future<void> Function()? initializeApp,
-  })  : _messaging = messaging ?? FirebaseMessaging.instance,
+  })  : _messagingOverride = messaging,
         _initializeApp = initializeApp ??
             (() async {
               await Firebase.initializeApp(
@@ -32,8 +32,11 @@ class FirebaseServiceImpl implements FirebaseService {
               );
             });
 
-  final FirebaseMessaging _messaging;
+  final FirebaseMessaging? _messagingOverride;
   final Future<void> Function() _initializeApp;
+
+  FirebaseMessaging get _messaging =>
+      _messagingOverride ?? FirebaseMessaging.instance;
 
   @override
   Future<void> initialize() async {

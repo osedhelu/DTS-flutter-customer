@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'dart:io';
 
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/infrastructure/datasources/auth_remote_datasource.dart';
@@ -21,6 +24,19 @@ import '../../features/tracking/infrastructure/datasources/tracking_ws_datasourc
 import '../../features/tracking/infrastructure/repositories/tracking_repository_impl.dart';
 import '../network/api_client.dart';
 import '../network/token_storage.dart';
+import '../../firebase_options.dart';
+
+final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
+  return FirebaseAuth.instance;
+});
+
+final googleSignInProvider = Provider<GoogleSignIn>((ref) {
+  return GoogleSignIn(
+    scopes: const ['email'],
+    clientId: Platform.isIOS ? DefaultFirebaseOptions.ios.iosClientId : null,
+    serverClientId: DefaultFirebaseOptions.googleServerClientId,
+  );
+});
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) {
   return SecureTokenStorage();
@@ -39,6 +55,8 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
     remoteDataSource: ref.watch(authRemoteDataSourceProvider),
     tokenStorage: ref.watch(tokenStorageProvider),
+    googleSignIn: ref.watch(googleSignInProvider),
+    firebaseAuth: ref.watch(firebaseAuthProvider),
   );
 });
 

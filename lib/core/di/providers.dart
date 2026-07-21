@@ -27,11 +27,18 @@ final registerUseCaseProvider = Provider<RegisterUseCase>((ref) {
 });
 
 final googleSignInUseCaseProvider = Provider<GoogleSignInUseCase>((ref) {
-  return GoogleSignInUseCase(ref.watch(authRepositoryProvider));
+  return GoogleSignInUseCase(
+    ref.watch(authRepositoryProvider),
+    googleSignIn: ref.watch(googleSignInProvider),
+    firebaseAuth: ref.watch(firebaseAuthProvider),
+  );
 });
 
 final appleSignInUseCaseProvider = Provider<AppleSignInUseCase>((ref) {
-  return AppleSignInUseCase(ref.watch(authRepositoryProvider));
+  return AppleSignInUseCase(
+    ref.watch(authRepositoryProvider),
+    firebaseAuth: ref.watch(firebaseAuthProvider),
+  );
 });
 
 final authStateProvider = FutureProvider<bool>((ref) async {

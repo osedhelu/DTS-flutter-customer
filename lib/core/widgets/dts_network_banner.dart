@@ -9,20 +9,24 @@ class DtsNetworkBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!visible) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: Theme.of(context).colorScheme.error,
+      color: scheme.errorContainer,
       child: SafeArea(
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              const Icon(Icons.wifi_off, color: Colors.white, size: 18),
+              Icon(Icons.wifi_off, color: scheme.onErrorContainer, size: 18),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   message ?? 'Sin conexión. Revisa tu red.',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: scheme.onErrorContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],

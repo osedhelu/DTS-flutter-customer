@@ -37,6 +37,7 @@ void main() {
     when(() => profileDs.getProfile()).thenAnswer(
       (_) async => const CustomerProfile(
         fullName: 'Ana',
+        email: 'ana@test.com',
         phone: '300',
         photoUrl: '',
         defaultAddress: 'Calle 1 #2-3',

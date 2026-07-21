@@ -7,22 +7,26 @@ abstract final class AppTheme {
   static const Color surface = Color(0xFFF7F8F6);
   static const String fontFamily = 'Manrope';
 
-  static ThemeData get light {
+  static ThemeData get light => _buildTheme(Brightness.light);
+
+  static ThemeData get dark => _buildTheme(Brightness.dark);
+
+  static ThemeData _buildTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
     final baseScheme = ColorScheme.fromSeed(
       seedColor: seed,
-      brightness: Brightness.light,
+      brightness: brightness,
     );
-
     final colorScheme = baseScheme.copyWith(
       secondary: accent,
       onSecondary: Colors.black,
-      secondaryContainer: accent.withValues(alpha: 0.18),
+      secondaryContainer: accent.withValues(alpha: isDark ? 0.24 : 0.18),
       onSecondaryContainer: const Color(0xFF3D2900),
       tertiary: accent,
-      surface: surface,
+      surface: isDark ? baseScheme.surface : surface,
     );
 
-    final baseText = ThemeData(brightness: Brightness.light).textTheme.apply(
+    final baseText = ThemeData(brightness: brightness).textTheme.apply(
           fontFamily: fontFamily,
         );
     final textTheme = baseText.copyWith(
@@ -34,12 +38,8 @@ abstract final class AppTheme {
         fontWeight: FontWeight.w700,
         letterSpacing: -0.3,
       ),
-      headlineLarge: baseText.headlineLarge?.copyWith(
-        fontWeight: FontWeight.w700,
-      ),
-      headlineMedium: baseText.headlineMedium?.copyWith(
-        fontWeight: FontWeight.w700,
-      ),
+      headlineLarge: baseText.headlineLarge?.copyWith(fontWeight: FontWeight.w700),
+      headlineMedium: baseText.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
       titleLarge: baseText.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       titleMedium: baseText.titleMedium?.copyWith(fontWeight: FontWeight.w600),
       titleSmall: baseText.titleSmall?.copyWith(fontWeight: FontWeight.w600),
@@ -48,11 +48,16 @@ abstract final class AppTheme {
       labelLarge: baseText.labelLarge?.copyWith(fontWeight: FontWeight.w700),
     );
 
+    final cardColor = isDark ? colorScheme.surfaceContainerHighest : Colors.white;
+    final inputFill = isDark ? colorScheme.surfaceContainerHigh : Colors.white;
+    final navColor = isDark ? colorScheme.surfaceContainer : Colors.white;
+
     return ThemeData(
       useMaterial3: true,
+      brightness: brightness,
       fontFamily: fontFamily,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: surface,
+      scaffoldBackgroundColor: colorScheme.surface,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: colorScheme.surface,
@@ -65,13 +70,13 @@ abstract final class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: Colors.white,
-        elevation: 1,
+        color: cardColor,
+        elevation: isDark ? 0 : 1,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+            color: colorScheme.outlineVariant.withValues(alpha: isDark ? 0.5 : 0.4),
           ),
         ),
         margin: EdgeInsets.zero,
@@ -79,9 +84,7 @@ abstract final class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           textStyle: const TextStyle(
             fontFamily: fontFamily,
             fontWeight: FontWeight.w700,
@@ -91,9 +94,7 @@ abstract final class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           side: BorderSide(color: colorScheme.outline),
           textStyle: const TextStyle(
             fontFamily: fontFamily,
@@ -112,9 +113,8 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: inputFill,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.outlineVariant),
@@ -140,14 +140,12 @@ abstract final class AppTheme {
           fontWeight: FontWeight.w600,
         ),
         side: BorderSide.none,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: navColor,
         indicatorColor: colorScheme.primary.withValues(alpha: 0.14),
-        elevation: 2,
+        elevation: isDark ? 0 : 2,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
@@ -164,9 +162,7 @@ abstract final class AppTheme {
           );
         }),
       ),
-      progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: colorScheme.primary,
-      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: colorScheme.primary),
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant.withValues(alpha: 0.6),
         space: 1,
@@ -178,27 +174,8 @@ abstract final class AppTheme {
           color: colorScheme.onInverseSurface,
         ),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-    );
-  }
-
-  static ThemeData get dark {
-    final baseScheme = ColorScheme.fromSeed(
-      seedColor: seed,
-      brightness: Brightness.dark,
-    );
-    final colorScheme = baseScheme.copyWith(secondary: accent);
-    return ThemeData(
-      useMaterial3: true,
-      fontFamily: fontFamily,
-      colorScheme: colorScheme,
-      brightness: Brightness.dark,
-      textTheme: ThemeData(brightness: Brightness.dark).textTheme.apply(
-            fontFamily: fontFamily,
-          ),
     );
   }
 }

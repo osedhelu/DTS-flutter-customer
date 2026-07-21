@@ -95,8 +95,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       style: theme.textTheme.titleLarge,
                     ),
                   ),
+                  if (p?.email.isNotEmpty == true) ...[
+                    const SizedBox(height: 4),
+                    Center(
+                      child: Text(
+                        p!.email,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
                   if (_error != null)
-                    Text(_error!, textAlign: TextAlign.center),
+                    Text(
+                      _error!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
                   const SizedBox(height: 24),
                   Card(
                     child: Column(
@@ -140,6 +155,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       child: Column(
                         children: [
                           ListTile(
+                          leading: const Icon(Icons.email_outlined),
+                          title: const Text('Correo'),
+                          trailing: Text(p.email.isEmpty ? '—' : p.email),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
                             leading: const Icon(Icons.phone_outlined),
                             title: const Text('Teléfono'),
                             trailing: Text(p.phone.isEmpty ? '—' : p.phone),

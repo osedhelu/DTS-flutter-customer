@@ -3,18 +3,20 @@ import 'package:equatable/equatable.dart';
 class CustomerProfile extends Equatable {
   const CustomerProfile({
     required this.fullName,
+    required this.email,
     required this.phone,
     required this.photoUrl,
     required this.defaultAddress,
   });
 
   final String fullName;
+  final String email;
   final String phone;
   final String photoUrl;
   final String defaultAddress;
 
   @override
-  List<Object?> get props => [fullName, phone, photoUrl, defaultAddress];
+  List<Object?> get props => [fullName, email, phone, photoUrl, defaultAddress];
 }
 
 class CustomerAddress extends Equatable {
