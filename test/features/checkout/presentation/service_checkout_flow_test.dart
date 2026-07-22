@@ -13,6 +13,8 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/test_providers.dart';
 
+import '../../../helpers/fake_cart_remote.dart';
+
 class MockCreateServiceOrderUseCase extends Mock
     implements CreateServiceOrderUseCase {}
 
@@ -78,7 +80,7 @@ void main() {
               .overrideWithValue(createServiceOrderUseCase),
           customerProfileRemoteDataSourceProvider.overrideWithValue(profileDs),
           cartNotifierProvider.overrideWith(
-            (ref) => CartNotifier(ref.watch(addItemUseCaseProvider))
+            (ref) => CartNotifier(ref.watch(addItemUseCaseProvider), FakeCartRemoteDataSource())
               ..addProduct(
                 storeId: 2,
                 storeName: 'Spa',

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/debug/agent_debug_log.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/widgets.dart';
@@ -41,15 +40,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       await action();
-      // #region agent log
-      agentDebugLog(
-        hypothesisId: 'I',
-        location: 'login_screen.dart:_afterAuth',
-        message: 'auth success → setAuthenticated(true) via postAuth',
-        data: {'willInvalidateAuth': false, 'setAuthenticated': true},
-        runId: 'post-fix-3',
-      );
-      // #endregion
       ref.read(postAuthServiceProvider).complete(ref);
       // No navegar aquí: setAuthenticated + redirect de GoRouter → /home.
     } catch (_) {

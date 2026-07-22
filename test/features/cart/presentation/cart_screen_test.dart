@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../helpers/test_providers.dart';
 
+import '../../../helpers/fake_cart_remote.dart';
+
 void main() {
   testWidgets('cart_screen_empty_state_test', (tester) async {
     final router = GoRouter(
@@ -27,7 +29,7 @@ void main() {
       buildTestApp(
         overrides: [
           cartNotifierProvider.overrideWith(
-            (ref) => CartNotifier(ref.watch(addItemUseCaseProvider)),
+            (ref) => CartNotifier(ref.watch(addItemUseCaseProvider), FakeCartRemoteDataSource()),
           ),
         ],
         child: MaterialApp.router(routerConfig: router),
@@ -62,7 +64,7 @@ void main() {
       buildTestApp(
         overrides: [
           cartNotifierProvider.overrideWith(
-            (ref) => CartNotifier(ref.watch(addItemUseCaseProvider))
+            (ref) => CartNotifier(ref.watch(addItemUseCaseProvider), FakeCartRemoteDataSource())
               ..addProduct(
                 storeId: 1,
                 storeName: 'Café',

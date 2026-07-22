@@ -14,6 +14,8 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/test_providers.dart';
+
+import '../../../helpers/fake_cart_remote.dart';
 import 'package:dio/dio.dart';
 
 class MockCreateOrderUseCase extends Mock implements CreateOrderUseCase {}
@@ -126,7 +128,7 @@ List<Override> _baseOverrides({
     customerProfileRemoteDataSourceProvider.overrideWithValue(profileDs),
     apiClientProvider.overrideWithValue(apiClient),
     cartNotifierProvider.overrideWith(
-      (ref) => CartNotifier(ref.watch(addItemUseCaseProvider))
+      (ref) => CartNotifier(ref.watch(addItemUseCaseProvider), FakeCartRemoteDataSource())
         ..addProduct(
           storeId: 1,
           storeName: 'Café',

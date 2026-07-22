@@ -7,9 +7,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'core/debug/agent_debug_log.dart';
 import 'core/di/providers.dart';
 import 'core/firebase/firebase_background_handler.dart';
+import 'core/notifications/customer_fcm_registration.dart';
 import 'core/theme/theme_mode_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -19,22 +19,6 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // #region agent log
-  FlutterError.onError = (details) {
-    agentDebugLog(
-      hypothesisId: 'E',
-      location: 'main.dart:FlutterError.onError',
-      message: details.exceptionAsString(),
-      data: {
-        'library': details.library,
-        'stack': details.stack?.toString().split('\n').take(8).join(' | '),
-      },
-      runId: 'post-fix-3',
-    );
-    FlutterError.presentError(details);
-  };
-  // #endregion
 
   if (!kIsWeb) {
     await Firebase.initializeApp(
@@ -55,7 +39,7 @@ class DtsCustomerApp extends ConsumerStatefulWidget {
 
 class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
-  int? _lastRouterHash;
+  CustomerFcmRegistration? _fcmRegistration;
 
   @override
   void initState() {
@@ -66,6 +50,7 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
   @override
   void dispose() {
     _connectivitySub?.cancel();
+    _fcmRegistration?.dispose();
     super.dispose();
   }
 
@@ -75,12 +60,17 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
       ref.read(connectivityOfflineProvider.notifier).state = offline;
     });
 
+    final auth = await ref.read(authStateProvider.future);
+    if (auth) {
+      unawaited(ref.read(cartNotifierProvider.notifier).hydrate());
+    }
+
     if (kIsWeb) return;
 
-    unawaited(_initPushStack());
+    unawaited(_initPushStack(authenticated: auth));
   }
 
-  Future<void> _initPushStack() async {
+  Future<void> _initPushStack({required bool authenticated}) async {
     final firebaseService = ref.read(firebaseServiceProvider);
     final handler = ref.read(pushNotificationHandlerProvider);
 
@@ -94,32 +84,27 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
       handler: handler,
       router: ref.read(appRouterProvider),
     );
+
+    if (authenticated) {
+      _fcmRegistration = CustomerFcmRegistration(
+        firebaseService: firebaseService,
+        registerFcmTokenUseCase: ref.read(registerFcmTokenUseCaseProvider),
+      );
+      _fcmRegistration!.listenTokenRefresh();
+      final ok = await _fcmRegistration!.register();
+      if (!ok) {
+        debugPrint(
+          'Bootstrap: FCM no registrado aún (permiso/APNS); '
+          'onTokenRefresh reintentará',
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Hipótesis V: NO watch auth aquí — evita rebuild de MaterialApp.router
-    // al mismo tiempo que refreshListenable actualiza páginas del Navigator.
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
-
-    // #region agent log
-    final routerChanged =
-        _lastRouterHash != null && _lastRouterHash != router.hashCode;
-    agentDebugLog(
-      hypothesisId: 'V',
-      location: 'main.dart:DtsCustomerApp.build',
-      message: 'MaterialApp.router build (stable; no auth watch)',
-      data: {
-        'routerHash': router.hashCode,
-        'routerChanged': routerChanged,
-        'prevRouterHash': _lastRouterHash,
-        'themeMode': themeMode.toString(),
-      },
-      runId: 'post-fix-3',
-    );
-    _lastRouterHash = router.hashCode;
-    // #endregion
 
     return MaterialApp.router(
       title: 'DTS Cliente',

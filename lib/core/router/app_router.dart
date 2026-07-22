@@ -20,58 +20,20 @@ import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/stores/presentation/screens/store_detail_screen.dart';
 import '../../features/shell/presentation/screens/customer_shell_screen.dart';
 import '../../features/tracking/presentation/screens/tracking_map_screen.dart';
-import '../debug/agent_debug_log.dart';
 import '../di/providers.dart';
 
 class AuthRouterListenable extends ChangeNotifier {
   AuthRouterListenable(this._ref) {
     _ref.listen<AsyncValue<bool>>(authStateProvider, (prev, next) {
-      if (next.isLoading) {
-        // #region agent log
-        agentDebugLog(
-          hypothesisId: 'A',
-          location: 'app_router.dart:AuthRouterListenable',
-          message: 'SKIP notify on loading',
-          data: {
-            'prev': prev?.toString(),
-            'next': next.toString(),
-          },
-          runId: 'post-fix-3',
-        );
-        // #endregion
-        return;
-      }
+      if (next.isLoading) return;
       final prevAuth = prev?.asData?.value;
       final nextAuth = next.asData?.value;
       if (prev != null &&
           prev.hasValue &&
           next.hasValue &&
           prevAuth == nextAuth) {
-        // #region agent log
-        agentDebugLog(
-          hypothesisId: 'I',
-          location: 'app_router.dart:AuthRouterListenable',
-          message: 'SKIP notify — auth bool unchanged',
-          data: {'auth': nextAuth},
-          runId: 'post-fix-3',
-        );
-        // #endregion
         return;
       }
-      // #region agent log
-      agentDebugLog(
-        hypothesisId: 'A',
-        location: 'app_router.dart:AuthRouterListenable',
-        message: 'authState changed → post-frame notifyListeners',
-        data: {
-          'prev': prev?.toString(),
-          'next': next.toString(),
-          'prevAuth': prevAuth,
-          'nextAuth': nextAuth,
-        },
-        runId: 'post-fix-3',
-      );
-      // #endregion
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (hasListeners) notifyListeners();
       });
@@ -91,72 +53,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ref.watch(authRouterListenableProvider);
   ref.keepAlive();
 
-  // #region agent log
-  agentDebugLog(
-    hypothesisId: 'B',
-    location: 'app_router.dart:appRouterProvider',
-    message: 'Creating NEW GoRouter instance',
-    data: {
-      'refreshHash': refresh.hashCode,
-      'auth': ref.read(authStateProvider).toString(),
-    },
-    runId: 'post-fix-3',
-  );
-  // #endregion
-
   return GoRouter(
-    // Hipótesis U/V: un solo Navigator desde el arranque (ruta splash).
-    // Nunca sustituir MaterialApp ↔ MaterialApp.router.
     initialLocation: '/splash',
     refreshListenable: refresh,
     redirect: (context, state) {
       final auth = ref.read(authStateProvider);
       final loc = state.matchedLocation;
-      final full = state.uri.toString();
       final isAuthGate = loc == '/splash';
       final isPublic = isAuthGate ||
           loc == '/login' ||
           loc == '/register' ||
           loc == '/forgot-password';
 
-      String? result;
       if (!auth.hasValue && !auth.hasError) {
-        result = isAuthGate ? null : '/splash';
-      } else if (auth.hasError) {
-        result = loc == '/login' ? null : '/login';
-      } else {
-        final isAuthenticated = auth.requireValue;
-        if (isAuthGate) {
-          result = isAuthenticated ? '/home' : '/login';
-        } else if (!isAuthenticated && !isPublic) {
-          result = '/login';
-        } else if (isAuthenticated &&
-            (loc == '/login' ||
-                loc == '/register' ||
-                loc == '/forgot-password')) {
-          result = '/home';
-        } else {
-          result = null;
-        }
+        return isAuthGate ? null : '/splash';
+      }
+      if (auth.hasError) {
+        return loc == '/login' ? null : '/login';
       }
 
-      // #region agent log
-      agentDebugLog(
-        hypothesisId: 'U',
-        location: 'app_router.dart:redirect',
-        message: 'redirect evaluated',
-        data: {
-          'loc': loc,
-          'fullUri': full,
-          'isPublic': isPublic,
-          'auth': auth.toString(),
-          'result': result,
-        },
-        runId: 'post-fix-3',
-      );
-      // #endregion
-
-      return result;
+      final isAuthenticated = auth.requireValue;
+      if (isAuthGate) {
+        return isAuthenticated ? '/home' : '/login';
+      }
+      if (!isAuthenticated && !isPublic) return '/login';
+      if (isAuthenticated &&
+          (loc == '/login' ||
+              loc == '/register' ||
+              loc == '/forgot-password')) {
+        return '/home';
+      }
+      return null;
     },
     routes: [
       GoRoute(
@@ -179,19 +106,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          // #region agent log
-          agentDebugLog(
-            hypothesisId: 'D',
-            location: 'app_router.dart:StatefulShellRoute.builder',
-            message: 'Shell builder',
-            data: {
-              'uri': state.uri.toString(),
-              'branchIndex': navigationShell.currentIndex,
-              'matched': state.matchedLocation,
-            },
-            runId: 'post-fix-3',
-          );
-          // #endregion
           return CustomerShellScreen(navigationShell: navigationShell);
         },
         branches: [

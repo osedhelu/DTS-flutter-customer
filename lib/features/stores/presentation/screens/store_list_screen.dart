@@ -6,6 +6,7 @@ import '../../../../core/di/providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../profile/domain/entities/customer_profile.dart';
 import '../../application/providers/featured_products_provider.dart';
 
 class StoreListScreen extends ConsumerStatefulWidget {
@@ -54,16 +55,29 @@ class _StoreListScreenState extends ConsumerState<StoreListScreen> {
 
   Future<void> _loadProfileSnippet() async {
     try {
-      final profile =
-          await ref.read(customerProfileRemoteDataSourceProvider).getProfile();
+      final ds = ref.read(customerProfileRemoteDataSourceProvider);
+      final profile = await ds.getProfile();
+      var addressText = profile.defaultAddress.trim();
+      if (addressText.isEmpty) {
+        try {
+          final addresses = await ds.listAddresses();
+          CustomerAddress? preferred;
+          for (final a in addresses) {
+            if (a.isDefault) {
+              preferred = a;
+              break;
+            }
+          }
+          preferred ??= addresses.isNotEmpty ? addresses.first : null;
+          addressText = preferred?.address.trim() ?? '';
+        } catch (_) {}
+      }
       if (!mounted) return;
       final name = profile.fullName.trim();
       final first = name.isEmpty ? null : name.split(' ').first;
       setState(() {
         _greetingName = first;
-        _shortAddress = profile.defaultAddress.trim().isEmpty
-            ? null
-            : profile.defaultAddress.trim();
+        _shortAddress = addressText.isEmpty ? null : addressText;
       });
     } catch (_) {}
   }
