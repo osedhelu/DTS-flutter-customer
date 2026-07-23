@@ -9,8 +9,16 @@ class StoresRepositoryImpl implements StoresRepository {
   final StoresRemoteDataSource _remoteDataSource;
 
   @override
-  Future<List<Store>> getStores() async {
-    final dtos = await _remoteDataSource.fetchStores();
+  Future<List<Store>> getStores({
+    double? latitude,
+    double? longitude,
+    double? radiusKm,
+  }) async {
+    final dtos = await _remoteDataSource.fetchStores(
+      latitude: latitude,
+      longitude: longitude,
+      radiusKm: radiusKm,
+    );
     return dtos.map((dto) => dto.toEntity()).toList();
   }
 }

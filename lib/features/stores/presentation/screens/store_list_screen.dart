@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/location_radius_constants.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../profile/domain/entities/customer_profile.dart';
+import '../../../settings/presentation/widgets/open_customer_search_zone_picker.dart';
 import '../../application/providers/featured_products_provider.dart';
 
 class StoreListScreen extends ConsumerStatefulWidget {
@@ -22,6 +24,7 @@ class _StoreListScreenState extends ConsumerState<StoreListScreen> {
   _HomeStoreFilter _storeFilter = _HomeStoreFilter.all;
   String? _greetingName;
   String? _shortAddress;
+  CustomerProfile? _profile;
 
   @override
   void initState() {
@@ -76,10 +79,22 @@ class _StoreListScreenState extends ConsumerState<StoreListScreen> {
       final name = profile.fullName.trim();
       final first = name.isEmpty ? null : name.split(' ').first;
       setState(() {
+        _profile = profile;
         _greetingName = first;
         _shortAddress = addressText.isEmpty ? null : addressText;
       });
     } catch (_) {}
+  }
+
+  Future<void> _openSearchZonePicker() async {
+    final updated = await openCustomerSearchZonePicker(
+      context,
+      ref,
+      profile: _profile,
+    );
+    if (updated != null && mounted) {
+      setState(() => _profile = updated);
+    }
   }
 
   @override
@@ -91,6 +106,10 @@ class _StoreListScreenState extends ConsumerState<StoreListScreen> {
     final greeting = _greetingName == null
         ? '¿Qué se te antoja?'
         : 'Hola, $_greetingName';
+
+    final radiusKm = normalizeRadiusPreset(
+      _profile?.searchRadiusKm ?? defaultRadiusKm,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -110,6 +129,21 @@ class _StoreListScreenState extends ConsumerState<StoreListScreen> {
         ),
         toolbarHeight: 72,
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Center(
+              child: ActionChip(
+                key: const Key('store_search_radius_chip'),
+                avatar: Icon(
+                  Icons.radar_outlined,
+                  size: 16,
+                  color: theme.colorScheme.primary,
+                ),
+                label: Text('${radiusKm.toStringAsFixed(0)} km'),
+                onPressed: _openSearchZonePicker,
+              ),
+            ),
+          ),
           if ((_shortAddress ?? '').isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(right: 8),

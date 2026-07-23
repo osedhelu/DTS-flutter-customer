@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/constants/location_radius_constants.dart';
+
 class CustomerProfile extends Equatable {
   const CustomerProfile({
     required this.fullName,
@@ -7,6 +9,9 @@ class CustomerProfile extends Equatable {
     required this.phone,
     required this.photoUrl,
     required this.defaultAddress,
+    this.searchCenterLatitude,
+    this.searchCenterLongitude,
+    this.searchRadiusKm = defaultRadiusKm,
   });
 
   final String fullName;
@@ -14,9 +19,24 @@ class CustomerProfile extends Equatable {
   final String phone;
   final String photoUrl;
   final String defaultAddress;
+  final double? searchCenterLatitude;
+  final double? searchCenterLongitude;
+  final double searchRadiusKm;
+
+  bool get hasSearchCenter =>
+      searchCenterLatitude != null && searchCenterLongitude != null;
 
   @override
-  List<Object?> get props => [fullName, email, phone, photoUrl, defaultAddress];
+  List<Object?> get props => [
+        fullName,
+        email,
+        phone,
+        photoUrl,
+        defaultAddress,
+        searchCenterLatitude,
+        searchCenterLongitude,
+        searchRadiusKm,
+      ];
 }
 
 class CustomerAddress extends Equatable {

@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/constants/location_radius_constants.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../../profile/domain/entities/customer_profile.dart';
+import '../widgets/open_customer_search_zone_picker.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -18,6 +21,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notifications = true;
   bool _loading = true;
+  CustomerProfile? _profile;
 
   @override
   void initState() {
@@ -27,11 +31,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _notifications = prefs.getBool('notifications_enabled') ?? true;
-      _loading = false;
-    });
+    try {
+      final profile =
+          await ref.read(customerProfileRemoteDataSourceProvider).getProfile();
+      if (!mounted) return;
+      setState(() {
+        _notifications = prefs.getBool('notifications_enabled') ?? true;
+        _profile = profile;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _notifications = prefs.getBool('notifications_enabled') ?? true;
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _openSearchZone() async {
+    final updated = await openCustomerSearchZonePicker(
+      context,
+      ref,
+      profile: _profile,
+    );
+    if (updated != null && mounted) {
+      setState(() => _profile = updated);
+    }
+  }
+
+  String get _searchZoneSubtitle {
+    final radius = normalizeRadiusPreset(
+      _profile?.searchRadiusKm ?? defaultRadiusKm,
+    );
+    if (_profile?.hasSearchCenter == true) {
+      return 'Mostrando tiendas en ${radius.toStringAsFixed(0)} km';
+    }
+    return 'Sin zona definida · default ${defaultRadiusKm.toStringAsFixed(0)} km';
   }
 
   @override
@@ -50,6 +86,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     await prefs.setBool('notifications_enabled', v);
                     setState(() => _notifications = v);
                   },
+                ),
+                ListTile(
+                  key: const Key('settings_search_zone_tile'),
+                  leading: const Icon(Icons.radar_outlined),
+                  title: const Text('Ubicación y radio de tiendas'),
+                  subtitle: Text(_searchZoneSubtitle),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openSearchZone,
                 ),
                 ListTile(
                   title: const Text('Tema'),

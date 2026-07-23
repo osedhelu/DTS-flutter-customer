@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/location_radius_constants.dart';
 import '../../domain/entities/customer_profile.dart';
 
 class CustomerProfileRemoteDataSource {
@@ -11,14 +12,7 @@ class CustomerProfileRemoteDataSource {
     final res = await _dio.get<Map<String, dynamic>>(
       '/accounts/customer/profile/',
     );
-    final j = res.data!;
-    return CustomerProfile(
-      fullName: j['full_name'] as String? ?? '',
-      email: j['email'] as String? ?? '',
-      phone: j['phone'] as String? ?? '',
-      photoUrl: j['photo_url'] as String? ?? '',
-      defaultAddress: j['default_address'] as String? ?? '',
-    );
+    return _profileFromJson(res.data!);
   }
 
   Future<CustomerProfile> updateProfile({
@@ -26,6 +20,9 @@ class CustomerProfileRemoteDataSource {
     String? phone,
     String? photoUrl,
     String? defaultAddress,
+    double? searchCenterLatitude,
+    double? searchCenterLongitude,
+    double? searchRadiusKm,
   }) async {
     final res = await _dio.patch<Map<String, dynamic>>(
       '/accounts/customer/profile/',
@@ -34,15 +31,29 @@ class CustomerProfileRemoteDataSource {
         if (phone != null) 'phone': phone,
         if (photoUrl != null) 'photo_url': photoUrl,
         if (defaultAddress != null) 'default_address': defaultAddress,
+        if (searchCenterLatitude != null)
+          'search_center_latitude': searchCenterLatitude,
+        if (searchCenterLongitude != null)
+          'search_center_longitude': searchCenterLongitude,
+        if (searchRadiusKm != null) 'search_radius_km': searchRadiusKm,
       },
     );
-    final j = res.data!;
+    return _profileFromJson(res.data!);
+  }
+
+  CustomerProfile _profileFromJson(Map<String, dynamic> j) {
     return CustomerProfile(
       fullName: j['full_name'] as String? ?? '',
       email: j['email'] as String? ?? '',
       phone: j['phone'] as String? ?? '',
       photoUrl: j['photo_url'] as String? ?? '',
       defaultAddress: j['default_address'] as String? ?? '',
+      searchCenterLatitude:
+          (j['search_center_latitude'] as num?)?.toDouble(),
+      searchCenterLongitude:
+          (j['search_center_longitude'] as num?)?.toDouble(),
+      searchRadiusKm:
+          (j['search_radius_km'] as num?)?.toDouble() ?? defaultRadiusKm,
     );
   }
 
