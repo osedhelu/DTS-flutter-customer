@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../../../../core/config/env.dart';
+import '../../../../core/debug/agent_debug_log.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/widgets.dart';
 
@@ -51,6 +52,18 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
       final dio = ref.read(apiClientProvider).dio;
       final res = await dio.get('/orders/${widget.orderId}/messages/');
       final list = (res.data as List).cast<dynamic>();
+      // #region agent log
+      agentDebugLog(
+        location: 'order_chat_screen.dart:_loadHistory',
+        message: 'chat history loaded',
+        hypothesisId: 'D',
+        data: {
+          'orderId': widget.orderId,
+          'count': list.length,
+          'statusCode': res.statusCode,
+        },
+      );
+      // #endregion
       if (!mounted) return;
       setState(() {
         _messages
@@ -59,7 +72,18 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
         _loading = false;
       });
       _scrollToEnd();
-    } catch (_) {
+    } catch (e) {
+      // #region agent log
+      agentDebugLog(
+        location: 'order_chat_screen.dart:_loadHistory',
+        message: 'chat history failed',
+        hypothesisId: 'D',
+        data: {
+          'orderId': widget.orderId,
+          'error': e.toString(),
+        },
+      );
+      // #endregion
       if (!mounted) return;
       setState(() => _loading = false);
     }
@@ -68,13 +92,49 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
   Future<void> _connectWs() async {
     try {
       final token = await ref.read(tokenStorageProvider).getAccessToken();
+      // #region agent log
+      agentDebugLog(
+        location: 'order_chat_screen.dart:_connectWs',
+        message: 'chat ws connect start',
+        hypothesisId: 'C',
+        data: {
+          'orderId': widget.orderId,
+          'hasToken': token != null && token.isNotEmpty,
+          'tokenLen': token?.length ?? 0,
+        },
+      );
+      // #endregion
       if (token == null || token.isEmpty) return;
       final uri = EnvConfig.buildWsUri(
         '/ws/orders/${widget.orderId}/chat/'
         '?token=${Uri.encodeQueryComponent(token)}',
       );
+      // #region agent log
+      agentDebugLog(
+        location: 'order_chat_screen.dart:_connectWs',
+        message: 'chat ws uri built',
+        hypothesisId: 'A',
+        data: {
+          'scheme': uri.scheme,
+          'host': uri.host,
+          'port': uri.port,
+          'hasPort': uri.hasPort,
+          'path': uri.path,
+          'uriNoQuery': uri.replace(query: '').toString(),
+          'containsColonZero': uri.toString().contains(':0'),
+        },
+      );
+      // #endregion
       final channel = WebSocketChannel.connect(uri);
       await channel.ready;
+      // #region agent log
+      agentDebugLog(
+        location: 'order_chat_screen.dart:_connectWs',
+        message: 'chat ws ready ok',
+        hypothesisId: 'B',
+        data: {'orderId': widget.orderId, 'port': uri.port},
+      );
+      // #endregion
       if (!mounted) {
         await channel.sink.close();
         return;
@@ -93,10 +153,32 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
             }
           } catch (_) {}
         },
-        onError: (_) {},
+        onError: (Object err) {
+          // #region agent log
+          agentDebugLog(
+            location: 'order_chat_screen.dart:onError',
+            message: 'chat ws stream error',
+            hypothesisId: 'B',
+            data: {'error': err.toString()},
+          );
+          // #endregion
+        },
         cancelOnError: true,
       );
-    } catch (_) {}
+    } catch (e) {
+      // #region agent log
+      agentDebugLog(
+        location: 'order_chat_screen.dart:_connectWs',
+        message: 'chat ws connect failed',
+        hypothesisId: 'B',
+        data: {
+          'orderId': widget.orderId,
+          'error': e.toString(),
+          'errorType': e.runtimeType.toString(),
+        },
+      );
+      // #endregion
+    }
   }
 
   void _scrollToEnd() {

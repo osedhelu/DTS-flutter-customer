@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/debug/agent_debug_log.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../../domain/entities/payment_receipt.dart';
+import '../screens/payment_receipt_screen.dart';
 
 class PaymentSandboxSheet extends StatefulWidget {
   const PaymentSandboxSheet({
@@ -10,12 +13,14 @@ class PaymentSandboxSheet extends StatefulWidget {
   });
 
   final double total;
-  final Future<void> Function(String cardLast4) onPay;
+
+  /// Cobra y devuelve el recibo; el sheet lo muestra inline (sin Navigator.push).
+  final Future<PaymentReceipt> Function(String cardLast4) onPay;
 
   static Future<bool?> show(
     BuildContext context, {
     required double total,
-    required Future<void> Function(String cardLast4) onPay,
+    required Future<PaymentReceipt> Function(String cardLast4) onPay,
   }) {
     return showModalBottomSheet<bool>(
       context: context,
@@ -34,6 +39,7 @@ class _PaymentSandboxSheetState extends State<PaymentSandboxSheet> {
   final _expiryController = TextEditingController(text: '12/30');
   final _cvvController = TextEditingController(text: '123');
   bool _loading = false;
+  PaymentReceipt? _receipt;
 
   @override
   void dispose() {
@@ -47,10 +53,20 @@ class _PaymentSandboxSheetState extends State<PaymentSandboxSheet> {
     setState(() => _loading = true);
     try {
       final digits = _cardController.text.replaceAll(RegExp(r'\D'), '');
-      final last4 = digits.length >= 4 ? digits.substring(digits.length - 4) : '4242';
-      await widget.onPay(last4);
+      final last4 =
+          digits.length >= 4 ? digits.substring(digits.length - 4) : '4242';
+      final receipt = await widget.onPay(last4);
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      // #region agent log
+      agentDebugLog(
+        location: 'payment_sandbox_sheet.dart:_submit',
+        message: 'showing receipt inline in sheet',
+        hypothesisId: 'H1',
+        runId: 'post-fix',
+        data: {'orderId': receipt.orderId},
+      );
+      // #endregion
+      setState(() => _receipt = receipt);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -61,8 +77,35 @@ class _PaymentSandboxSheetState extends State<PaymentSandboxSheet> {
     }
   }
 
+  void _viewOrder() {
+    // #region agent log
+    agentDebugLog(
+      location: 'payment_sandbox_sheet.dart:_viewOrder',
+      message: 'closing sheet after Ver pedido',
+      hypothesisId: 'H1',
+      runId: 'post-fix',
+      data: {'orderId': _receipt?.orderId},
+    );
+    // #endregion
+    Navigator.of(context).pop(true);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final receipt = _receipt;
+    if (receipt != null) {
+      // Contenido scrolleable dentro del sheet (sin segundo Navigator.push).
+      return SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.75,
+          child: PaymentReceiptScreen(
+            receipt: receipt,
+            onViewOrder: _viewOrder,
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         20,

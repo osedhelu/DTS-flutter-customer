@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-
-/// Wordmark DTS para AppBars / auth.
+/// Logo DTS (assets/images/logo.png) para AppBars / auth.
 class DtsBrandMark extends StatelessWidget {
   const DtsBrandMark({super.key, this.size = 40, this.showWordmark = true});
 
@@ -11,43 +9,21 @@ class DtsBrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.coral, AppColors.coralDark],
-            ),
-            borderRadius: BorderRadius.circular(size * 0.28),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'D',
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: size * 0.48,
-              height: 1,
-            ),
-          ),
-        ),
-        if (showWordmark) ...[
-          const SizedBox(width: 10),
-          Text(
-            'DTS',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ],
+    // El asset ya incluye el wordmark "TS"; si showWordmark es true
+    // mostramos el logo completo un poco más ancho.
+    final width = showWordmark ? size * 1.35 : size;
+
+    return Image.asset(
+      'assets/images/logo.png',
+      width: width,
+      height: size,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      errorBuilder: (_, __, ___) => SizedBox(
+        width: size,
+        height: size,
+        child: const ColoredBox(color: Color(0xFF44D177)),
+      ),
     );
   }
 }

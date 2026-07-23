@@ -100,26 +100,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Center(
                   child: Column(
                     children: [
-                      const DtsBrandMark(size: 72, showWordmark: false),
-                      const SizedBox(height: 16),
+                      const DtsBrandMark(size: 88, showWordmark: false),
+                      const SizedBox(height: 12),
                       Text(
-                        'DTS',
+                        'Pide en tus comercios favoritos',
                         textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          color: AppColors.ink,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.inkMuted,
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Pide en tus comercios favoritos',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.inkMuted,
                   ),
                 ),
                 const SizedBox(height: 36),

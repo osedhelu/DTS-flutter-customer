@@ -30,8 +30,9 @@ flutter_ios_podfile_setup
 target 'Runner' do
   use_frameworks!
 
-  # Evita conflicto molinillo: lock pedía 11.3.1 y el CDN a veces solo resuelve 11.3.0
+  # Evita conflicto molinillo / CDN desactualizado al hacer `pod install` sin --repo-update
   pod 'AppCheckCore', '11.3.0'
+  pod 'GoogleUtilities', '8.1.1'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do

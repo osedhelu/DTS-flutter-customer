@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 
 const _inFlutterTest = bool.fromEnvironment('FLUTTER_TEST');
 
-/// Debug-session logger (session c4eafd). Do not log secrets/PII.
+/// Debug-session logger (session 7aed00). Do not log secrets/PII.
 /// No sync filesystem I/O (blocks isolate during Navigator updates).
 void agentDebugLog({
   required String location,
@@ -16,7 +16,7 @@ void agentDebugLog({
   String runId = 'pre-fix',
 }) {
   final payload = <String, Object?>{
-    'sessionId': 'c4eafd',
+    'sessionId': '7aed00',
     'runId': runId,
     'hypothesisId': hypothesisId,
     'location': location,
@@ -42,7 +42,7 @@ void agentDebugLog({
           ),
         );
         req.headers.set('Content-Type', 'application/json');
-        req.headers.set('X-Debug-Session-Id', 'c4eafd');
+        req.headers.set('X-Debug-Session-Id', '7aed00');
         req.write(line);
         await req.close().timeout(const Duration(milliseconds: 300));
       } catch (_) {

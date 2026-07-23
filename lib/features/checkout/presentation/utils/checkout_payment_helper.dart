@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/debug/agent_debug_log.dart';
 import '../../../../core/di/repository_providers.dart';
 import '../../domain/entities/payment_receipt.dart';
-import '../screens/payment_receipt_screen.dart';
 import '../widgets/payment_sandbox_sheet.dart';
 
 bool isSandboxPaymentMethod(Map<String, dynamic>? method) {
@@ -34,12 +33,12 @@ Future<void> completeOrderWithOptionalSandbox({
   required bool isService,
 }) async {
   final method = selectedPaymentMethod(paymentMethods, selectedPaymentMethodId);
+  final dest = isService
+      ? '/service-tracking/$orderId'
+      : '/tracking/$orderId';
+
   if (!isSandboxPaymentMethod(method)) {
-    context.go(
-      isService
-          ? '/service-tracking/$orderId'
-          : '/tracking/$orderId',
-    );
+    context.go(dest);
     return;
   }
 
@@ -50,43 +49,31 @@ Future<void> completeOrderWithOptionalSandbox({
       final data = await ref
           .read(ordersRemoteDataSourceProvider)
           .sandboxPay(orderId: orderId, cardLast4: last4);
-      if (!context.mounted) return;
-      final receipt = PaymentReceipt.fromJson(data);
       // #region agent log
       agentDebugLog(
         location: 'checkout_payment_helper.dart:onPay',
-        message: 'pushing PaymentReceipt via Navigator',
-        hypothesisId: 'H2',
-        data: {'orderId': orderId, 'canPop': Navigator.of(context).canPop()},
-      );
-      // #endregion
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (_) => PaymentReceiptScreen(receipt: receipt),
-        ),
-      );
-      // #region agent log
-      agentDebugLog(
-        location: 'checkout_payment_helper.dart:afterReceipt',
-        message: 'PaymentReceipt pop completed',
-        hypothesisId: 'H2',
+        message: 'sandbox pay ok, return receipt for inline sheet',
+        hypothesisId: 'H1',
+        runId: 'post-fix',
         data: {'orderId': orderId},
       );
       // #endregion
+      return PaymentReceipt.fromJson(data);
     },
   );
 
   if (!context.mounted) return;
-  final dest = isService
-      ? '/service-tracking/$orderId'
-      : '/tracking/$orderId';
   // #region agent log
   agentDebugLog(
     location: 'checkout_payment_helper.dart:afterSandbox',
-    message: 'context.go after sandbox sheet',
+    message: 'sheet closed; go tracking if paid',
     hypothesisId: 'H1',
+    runId: 'post-fix',
     data: {'paid': paid, 'dest': dest},
   );
   // #endregion
-  context.go(dest);
+  // El Future del sheet completa tras didComplete del modal: seguro hacer go.
+  if (paid == true) {
+    context.go(dest);
+  }
 }
