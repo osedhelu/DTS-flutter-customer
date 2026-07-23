@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/debug/agent_debug_log.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../domain/entities/payment_receipt.dart';
 
@@ -59,8 +60,21 @@ class PaymentReceiptScreen extends StatelessWidget {
           const SizedBox(height: 32),
           DtsPrimaryButton(
             label: 'Ver pedido',
-            onPressed: () =>
-                Navigator.of(context).popUntil((route) => route.isFirst),
+            onPressed: () {
+              // #region agent log
+              final nav = Navigator.of(context);
+              agentDebugLog(
+                location: 'payment_receipt_screen.dart:Ver pedido',
+                message: 'about to popUntil isFirst',
+                hypothesisId: 'H1',
+                data: {
+                  'canPop': nav.canPop(),
+                  'orderId': receipt.orderId,
+                },
+              );
+              // #endregion
+              nav.popUntil((route) => route.isFirst);
+            },
           ),
         ],
       ),

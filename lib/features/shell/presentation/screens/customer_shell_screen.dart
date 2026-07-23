@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/debug/agent_debug_log.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../cart/application/providers/cart_providers.dart';
 import '../../../cart/presentation/screens/cart_screen.dart';
@@ -94,10 +95,19 @@ class ShellProfileScreen extends StatelessWidget {
 /// Prefiere el tab Carrito del shell; si no aplica, push standalone.
 void goToCart(BuildContext context) {
   final loc = GoRouterState.of(context).matchedLocation;
-  if (loc == '/home' ||
+  final useGo = loc == '/home' ||
       loc.startsWith('/orders') ||
       loc == '/cart' ||
-      loc.startsWith('/profile')) {
+      loc.startsWith('/profile');
+  // #region agent log
+  agentDebugLog(
+    location: 'customer_shell_screen.dart:goToCart',
+    message: 'goToCart navigation',
+    hypothesisId: 'H3',
+    data: {'loc': loc, 'mode': useGo ? 'go' : 'push'},
+  );
+  // #endregion
+  if (useGo) {
     context.go('/cart');
   } else {
     context.push('/cart');

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../debug/agent_debug_log.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
@@ -35,6 +36,17 @@ class AuthRouterListenable extends ChangeNotifier {
         return;
       }
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        // #region agent log
+        agentDebugLog(
+          location: 'app_router.dart:AuthRouterListenable',
+          message: 'auth refresh notifyListeners',
+          hypothesisId: 'H4',
+          data: {
+            'prevAuth': prevAuth,
+            'nextAuth': nextAuth,
+          },
+        );
+        // #endregion
         if (hasListeners) notifyListeners();
       });
     });
@@ -56,6 +68,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: refresh,
+    observers: [AgentNavObserver(tag: 'go_router_root')],
     redirect: (context, state) {
       final auth = ref.read(authStateProvider);
       final loc = state.matchedLocation;
@@ -65,25 +78,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           loc == '/register' ||
           loc == '/forgot-password';
 
+      String? result;
       if (!auth.hasValue && !auth.hasError) {
-        return isAuthGate ? null : '/splash';
+        result = isAuthGate ? null : '/splash';
+      } else if (auth.hasError) {
+        result = loc == '/login' ? null : '/login';
+      } else {
+        final isAuthenticated = auth.requireValue;
+        if (isAuthGate) {
+          result = isAuthenticated ? '/home' : '/login';
+        } else if (!isAuthenticated && !isPublic) {
+          result = '/login';
+        } else if (isAuthenticated &&
+            (loc == '/login' ||
+                loc == '/register' ||
+                loc == '/forgot-password')) {
+          result = '/home';
+        }
       }
-      if (auth.hasError) {
-        return loc == '/login' ? null : '/login';
+      // #region agent log
+      if (result != null) {
+        agentDebugLog(
+          location: 'app_router.dart:redirect',
+          message: 'go_router redirect',
+          hypothesisId: 'H4',
+          data: {
+            'from': loc,
+            'to': result,
+            'authHasValue': auth.hasValue,
+            'fullPath': state.uri.toString(),
+          },
+        );
       }
-
-      final isAuthenticated = auth.requireValue;
-      if (isAuthGate) {
-        return isAuthenticated ? '/home' : '/login';
-      }
-      if (!isAuthenticated && !isPublic) return '/login';
-      if (isAuthenticated &&
-          (loc == '/login' ||
-              loc == '/register' ||
-              loc == '/forgot-password')) {
-        return '/home';
-      }
-      return null;
+      // #endregion
+      return result;
     },
     routes: [
       GoRoute(

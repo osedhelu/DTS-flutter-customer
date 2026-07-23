@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/di/providers.dart';
+import 'core/debug/agent_debug_log.dart';
 import 'core/firebase/firebase_background_handler.dart';
 import 'core/notifications/customer_fcm_registration.dart';
 import 'core/theme/theme_mode_provider.dart';
@@ -40,6 +41,7 @@ class DtsCustomerApp extends ConsumerStatefulWidget {
 class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   CustomerFcmRegistration? _fcmRegistration;
+  bool? _lastOfflineLogged;
 
   @override
   void initState() {
@@ -115,6 +117,20 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
         return Consumer(
           builder: (context, ref, _) {
             final offline = ref.watch(connectivityOfflineProvider);
+            // #region agent log
+            if (_lastOfflineLogged != offline) {
+              _lastOfflineLogged = offline;
+              agentDebugLog(
+                location: 'main.dart:MaterialApp.builder',
+                message: 'connectivity banner toggle',
+                hypothesisId: 'H5',
+                data: {
+                  'offline': offline,
+                  'hasChild': child != null,
+                },
+              );
+            }
+            // #endregion
             return Stack(
               children: [
                 child ?? const SizedBox.shrink(),

@@ -47,13 +47,14 @@ class TrackingWsDataSource {
     return WebSocketTrackingConnection(WebSocketChannel.connect(uri));
   }
 
-  /// URI pública (útil en tests).
+  /// URI pública (útil en tests). Evita `port == 0` / `Uri.replace` roto en wss.
   Uri buildUri({required int orderId, required String accessToken}) {
     final base = _wsBaseUrl.endsWith('/')
         ? _wsBaseUrl.substring(0, _wsBaseUrl.length - 1)
         : _wsBaseUrl;
-    return Uri.parse('$base/ws/orders/$orderId/tracking/').replace(
-      queryParameters: {'token': accessToken},
+    final token = Uri.encodeQueryComponent(accessToken);
+    return EnvConfig.normalizeWsUri(
+      Uri.parse('$base/ws/orders/$orderId/tracking/?token=$token'),
     );
   }
 
