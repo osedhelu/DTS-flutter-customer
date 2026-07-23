@@ -21,6 +21,24 @@ import 'firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // #region agent log
+  FlutterError.onError = (details) {
+    agentDebugLog(
+      location: 'main.dart:FlutterError',
+      message: 'FlutterError.onError',
+      hypothesisId: 'F4',
+      runId: 'post-fix',
+      data: {
+        'error': details.exceptionAsString(),
+        'library': details.library,
+        'stackHead':
+            details.stack?.toString().split('\n').take(8).join(' | ') ?? '',
+      },
+    );
+    FlutterError.presentError(details);
+  };
+  // #endregion
+
   if (!kIsWeb) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -42,6 +60,7 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   CustomerFcmRegistration? _fcmRegistration;
   bool? _lastOfflineLogged;
+  ThemeMode? _lastThemeLogged;
 
   @override
   void initState() {
@@ -105,8 +124,22 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
 
   @override
   Widget build(BuildContext context) {
-    final router = ref.watch(appRouterProvider);
+    // read: evita recrear MaterialApp.router si el Provider se notifica.
+    final router = ref.read(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
+
+    // #region agent log
+    if (_lastThemeLogged != themeMode) {
+      _lastThemeLogged = themeMode;
+      agentDebugLog(
+        location: 'main.dart:build',
+        message: 'themeMode applied to MaterialApp',
+        hypothesisId: 'F4',
+        runId: 'post-fix',
+        data: {'themeMode': themeMode.name},
+      );
+    }
+    // #endregion
 
     return MaterialApp.router(
       title: 'DTS Cliente',

@@ -4,7 +4,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+const _inFlutterTest = bool.fromEnvironment('FLUTTER_TEST');
+
 /// Debug-session logger (session c4eafd). Do not log secrets/PII.
+/// No sync filesystem I/O (blocks isolate during Navigator updates).
 void agentDebugLog({
   required String location,
   required String message,
@@ -24,10 +27,15 @@ void agentDebugLog({
   final line = jsonEncode(payload);
   // #region agent log
   debugPrint('AGENT_DEBUG $line');
+  if (_inFlutterTest) return;
+  // Fire-and-forget; never await inside build/Navigator callbacks.
   for (final host in const ['127.0.0.1', '192.168.0.193']) {
     () async {
+      HttpClient? client;
       try {
-        final client = HttpClient()..connectionTimeout = const Duration(milliseconds: 400);
+        client = HttpClient()
+          ..connectionTimeout = const Duration(milliseconds: 300)
+          ..idleTimeout = const Duration(milliseconds: 300);
         final req = await client.postUrl(
           Uri.parse(
             'http://$host:7874/ingest/c01cbf28-0f95-4153-b1b8-f0bd60922f91',
@@ -36,15 +44,13 @@ void agentDebugLog({
         req.headers.set('Content-Type', 'application/json');
         req.headers.set('X-Debug-Session-Id', 'c4eafd');
         req.write(line);
-        await req.close().timeout(const Duration(milliseconds: 400));
-        client.close(force: true);
-      } catch (_) {}
+        await req.close().timeout(const Duration(milliseconds: 300));
+      } catch (_) {
+      } finally {
+        client?.close(force: true);
+      }
     }();
   }
-  try {
-    File('/Volumes/Datos/dts-app-ecommerce/.cursor/debug-c4eafd.log')
-        .writeAsStringSync('$line\n', mode: FileMode.append, flush: true);
-  } catch (_) {}
   // #endregion
 }
 

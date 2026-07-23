@@ -17,11 +17,17 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     final value = prefs.getString(_themeKey);
-    state = switch (value) {
+    final mode = switch (value) {
       'light' => ThemeMode.light,
       'dark' => ThemeMode.dark,
       _ => ThemeMode.system,
     };
+    if (mode == state) return;
+    // Diferir rebuild de MaterialApp para no chocar con splash→home.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (mode != state) state = mode;
+    });
   }
 
   Future<void> setMode(ThemeMode mode) async {

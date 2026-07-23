@@ -92,24 +92,22 @@ class ShellProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) => const ProfileScreen();
 }
 
-/// Prefiere el tab Carrito del shell; si no aplica, push standalone.
+/// Prefiere el tab Carrito del shell (nunca push: rompería el stack del
+/// StatefulShellRoute y crash en maybePop/_handlePopPage).
 void goToCart(BuildContext context) {
   final loc = GoRouterState.of(context).matchedLocation;
-  final useGo = loc == '/home' ||
-      loc.startsWith('/orders') ||
-      loc == '/cart' ||
-      loc.startsWith('/profile');
+  final router = GoRouter.of(context);
   // #region agent log
   agentDebugLog(
     location: 'customer_shell_screen.dart:goToCart',
     message: 'goToCart navigation',
     hypothesisId: 'H3',
-    data: {'loc': loc, 'mode': useGo ? 'go' : 'push'},
+    runId: 'post-fix',
+    data: {'loc': loc, 'mode': 'go-post-frame'},
   );
   // #endregion
-  if (useGo) {
-    context.go('/cart');
-  } else {
-    context.push('/cart');
-  }
+  // Post-frame: evita go() a mitad de una transición push (Future already completed).
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    router.go('/cart');
+  });
 }

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/location_radius_constants.dart';
+import '../../../../core/debug/agent_debug_log.dart';
 import '../../../../core/di/providers.dart';
 import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../../core/widgets/widgets.dart';
@@ -152,8 +153,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   onTap: () async {
                     await ref.read(authRepositoryProvider).logout();
-                    ref.invalidate(authStateProvider);
-                    if (context.mounted) context.go('/login');
+                    // #region agent log
+                    agentDebugLog(
+                      location: 'settings_screen.dart:logout',
+                      message: 'logout setAuthenticated(false) only',
+                      hypothesisId: 'F3',
+                      runId: 'post-fix',
+                    );
+                    // #endregion
+                    // Sin invalidate (flicker loading) ni context.go (doble nav).
+                    ref.read(authStateProvider.notifier).setAuthenticated(false);
                   },
                 ),
               ],
