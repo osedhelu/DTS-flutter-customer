@@ -118,9 +118,33 @@ void main() {
     verify(() => firebaseAuth.signOut()).called(1);
     verify(() => googleSignIn.signOut()).called(1);
     verifyNever(() => googleSignIn.disconnect());
+    verify(() => firebaseAuth.signInWithCredential(any())).called(1);
     verify(
       () => repository.signInWithGoogle(idToken: 'firebase-id-token'),
     ).called(1);
+  });
+
+  test('falla si Firebase Auth lanza FirebaseAuthException', () async {
+    when(() => googleSignIn.signIn()).thenAnswer((_) async => account);
+    when(() => account.authentication).thenAnswer((_) async => googleAuth);
+    when(() => googleAuth.idToken).thenReturn('google-id-token');
+    when(() => firebaseAuth.signInWithCredential(any())).thenThrow(
+      FirebaseAuthException(
+        code: 'unknown',
+        message: 'An internal error has occurred',
+      ),
+    );
+
+    await expectLater(
+      useCase.call(),
+      throwsA(
+        isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          contains('Firebase Auth falló'),
+        ),
+      ),
+    );
   });
 
   test('falla si Firebase no entrega idToken tras credential', () async {

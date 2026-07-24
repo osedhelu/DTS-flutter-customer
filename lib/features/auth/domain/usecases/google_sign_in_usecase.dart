@@ -27,18 +27,28 @@ class GoogleSignInUseCase {
     }
 
     final googleAuth = await account.authentication;
-    if (googleAuth.idToken == null || googleAuth.idToken!.isEmpty) {
+    final googleIdToken = googleAuth.idToken;
+    if (googleIdToken == null || googleIdToken.isEmpty) {
       throw StateError(
         'Google no devolvió idToken. Revisa serverClientId / OAuth en Firebase.',
       );
     }
 
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+    // Solo idToken: mezclar accessToken en iOS a menudo provoca
+    // firebase_auth/unknown "An internal error has occurred".
+    final credential = GoogleAuthProvider.credential(idToken: googleIdToken);
 
-    await _firebaseAuth.signInWithCredential(credential);
+    try {
+      await _firebaseAuth.signInWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      final detail = [
+        e.code,
+        if (e.message != null && e.message!.isNotEmpty) e.message,
+        if (e.plugin.isNotEmpty) e.plugin,
+      ].join(' | ');
+      throw StateError('Firebase Auth falló ($detail)');
+    }
+
     final idToken = await _firebaseAuth.currentUser?.getIdToken();
     if (idToken == null || idToken.isEmpty) {
       throw StateError('No se pudo obtener el token de Firebase');
