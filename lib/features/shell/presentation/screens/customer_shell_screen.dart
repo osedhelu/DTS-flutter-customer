@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/debug/agent_debug_log.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../cart/application/providers/cart_providers.dart';
 import '../../../cart/presentation/screens/cart_screen.dart';
 import '../../../orders/presentation/screens/customer_orders_screen.dart';
@@ -18,6 +17,7 @@ class CustomerShellScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cartCount = ref.watch(cartItemCountProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       body: navigationShell,
@@ -42,13 +42,13 @@ class CustomerShellScreen extends ConsumerWidget {
             icon: Badge(
               isLabelVisible: cartCount > 0,
               label: Text('$cartCount'),
-              backgroundColor: AppColors.coral,
+              backgroundColor: scheme.primary,
               child: const Icon(Icons.shopping_bag_outlined),
             ),
             selectedIcon: Badge(
               isLabelVisible: cartCount > 0,
               label: Text('$cartCount'),
-              backgroundColor: AppColors.coral,
+              backgroundColor: scheme.primary,
               child: const Icon(Icons.shopping_bag_rounded),
             ),
             label: 'Carrito',

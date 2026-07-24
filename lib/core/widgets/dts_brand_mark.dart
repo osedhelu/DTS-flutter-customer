@@ -22,7 +22,7 @@ class DtsBrandMark extends StatelessWidget {
       errorBuilder: (_, __, ___) => SizedBox(
         width: size,
         height: size,
-        child: const ColoredBox(color: Color(0xFF44D177)),
+        child: ColoredBox(color: Theme.of(context).colorScheme.primary),
       ),
     );
   }

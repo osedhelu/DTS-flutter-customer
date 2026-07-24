@@ -265,18 +265,22 @@ class _SplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.white,
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      backgroundColor: scheme.surface,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DtsBrandMark(size: 120, showWordmark: false),
-            SizedBox(height: 28),
+            const DtsBrandMark(size: 120, showWordmark: false),
+            const SizedBox(height: 28),
             SizedBox(
               width: 28,
               height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: scheme.primary,
+              ),
             ),
           ],
         ),

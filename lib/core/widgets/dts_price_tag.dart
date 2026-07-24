@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
-
 class DtsPriceTag extends StatelessWidget {
   const DtsPriceTag({
     super.key,
@@ -15,6 +13,7 @@ class DtsPriceTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Text(
       '\$${amount.toStringAsFixed(2)}',
       style: (emphasized
@@ -22,7 +21,7 @@ class DtsPriceTag extends StatelessWidget {
               : theme.textTheme.titleMedium)
           ?.copyWith(
         fontWeight: FontWeight.w800,
-        color: AppColors.ink,
+        color: scheme.onSurface,
       ),
     );
   }

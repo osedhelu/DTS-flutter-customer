@@ -27,16 +27,27 @@ abstract final class AppTheme {
           ? AppColors.coral.withValues(alpha: 0.28)
           : AppColors.creamDeep,
       onPrimaryContainer: isDark ? Colors.white : AppColors.ink,
-      secondary: AppColors.amber,
-      onSecondary: AppColors.ink,
-      secondaryContainer: AppColors.amber.withValues(alpha: isDark ? 0.28 : 0.22),
-      onSecondaryContainer: const Color(0xFF3D2900),
+      secondary: isDark ? const Color(0xFFFFC14D) : AppColors.amber,
+      onSecondary: isDark ? const Color(0xFF2A1C00) : AppColors.ink,
+      secondaryContainer:
+          AppColors.amber.withValues(alpha: isDark ? 0.22 : 0.22),
+      onSecondaryContainer:
+          isDark ? const Color(0xFFFFE2A8) : const Color(0xFF3D2900),
       tertiary: AppColors.mint,
       onTertiary: Colors.white,
       error: AppColors.danger,
-      surface: isDark ? const Color(0xFF161412) : AppColors.cream,
-      onSurface: isDark ? const Color(0xFFF5F0EB) : AppColors.ink,
-      onSurfaceVariant: isDark ? const Color(0xFFB0A8A0) : AppColors.inkMuted,
+      surface: isDark ? const Color(0xFF141210) : AppColors.cream,
+      surfaceContainerHighest:
+          isDark ? const Color(0xFF24201C) : AppColors.paper,
+      surfaceContainerHigh:
+          isDark ? const Color(0xFF1E1A17) : AppColors.paper,
+      surfaceContainer:
+          isDark ? const Color(0xFF1A1714) : AppColors.paper,
+      onSurface: isDark ? const Color(0xFFF7F1EC) : AppColors.ink,
+      onSurfaceVariant: isDark ? const Color(0xFFC4BBB2) : AppColors.inkMuted,
+      outline: isDark ? const Color(0xFF5A524A) : baseScheme.outline,
+      outlineVariant:
+          isDark ? const Color(0xFF3A342E) : baseScheme.outlineVariant,
     );
 
     final baseText = ThemeData(brightness: brightness).textTheme.apply(

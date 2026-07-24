@@ -122,7 +122,7 @@ class _StoreListScreenState extends ConsumerState<StoreListScreen> {
             Text(
               greeting,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.inkMuted,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],

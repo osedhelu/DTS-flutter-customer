@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/widgets.dart';
+import '../widgets/auth_scaffold.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -52,48 +53,65 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Recuperar contraseña')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: _sent
-            ? DtsEmptyState(
-                icon: Icons.mark_email_read_outlined,
-                title: 'Revisa tu correo',
-                message:
-                    'Si existe una cuenta con ese email, enviamos instrucciones.',
-                actionLabel: 'Volver',
-                onAction: () => Navigator.of(context).pop(),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextField(
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Correo electrónico',
-                      prefixIcon: Icon(Icons.email_outlined),
-                    ),
-                  ),
-                  if (_error != null) ...[
-                    const SizedBox(height: 8),
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return AuthScaffold(
+      appBar: AppBar(
+        title: const Text('Recuperar contraseña'),
+        backgroundColor: Colors.transparent,
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+      body: _sent
+          ? DtsEmptyState(
+              icon: Icons.mark_email_read_outlined,
+              title: 'Revisa tu correo',
+              message:
+                  'Si existe una cuenta con ese email, enviamos instrucciones.',
+              actionLabel: 'Volver',
+              onAction: () => Navigator.of(context).pop(),
+            )
+          : Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                     Text(
-                      _error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                      'Te enviaremos un enlace para restablecer tu contraseña.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      decoration: const InputDecoration(
+                        labelText: 'Correo electrónico',
+                        prefixIcon: Icon(Icons.email_outlined),
+                      ),
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _error!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: scheme.error,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    DtsPrimaryButton(
+                      label: 'Enviar enlace',
+                      isLoading: _loading,
+                      onPressed: _submit,
+                    ),
                   ],
-                  const SizedBox(height: 24),
-                  DtsPrimaryButton(
-                    label: 'Enviar enlace',
-                    isLoading: _loading,
-                    onPressed: _submit,
-                  ),
-                ],
+                ),
               ),
-      ),
+            ),
     );
   }
 }

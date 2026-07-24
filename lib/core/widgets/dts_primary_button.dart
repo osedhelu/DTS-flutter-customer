@@ -16,11 +16,15 @@ class DtsPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onPrimary = Theme.of(context).colorScheme.onPrimary;
     final child = isLoading
-        ? const SizedBox(
+        ? SizedBox(
             width: 22,
             height: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: onPrimary,
+            ),
           )
         : icon == null
             ? Text(label)

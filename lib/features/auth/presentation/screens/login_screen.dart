@@ -6,9 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/providers.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../application/post_auth_service.dart';
+import '../widgets/auth_scaffold.dart';
+import '../widgets/social_auth_buttons.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -41,7 +42,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await action();
       ref.read(postAuthServiceProvider).complete(ref);
-      // No navegar aquí: setAuthenticated + redirect de GoRouter → /home.
     } catch (e) {
       if (mounted) {
         final msg = e.toString();
@@ -61,7 +61,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               msg.contains('Token de Firebase')) {
             _error = 'El servidor rechazó el login con Google.';
           } else {
-            // Mensaje corto del error real para poder diagnosticar en release.
             final short = msg.length > 140 ? '${msg.substring(0, 140)}…' : msg;
             _error = short.replaceFirst(RegExp(r'^Exception:\s*'), '');
           }
@@ -98,141 +97,99 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
 
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.creamDeep,
-              AppColors.cream,
-            ],
-            stops: const [0.0, 0.45],
+    return AuthScaffold(
+      header: Column(
+        children: [
+          const DtsBrandMark(size: 88, showWordmark: false),
+          const SizedBox(height: 12),
+          Text(
+            'Pide en tus comercios favoritos',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+        ],
+      ),
+      body: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Center(
-                  child: Column(
-                    children: [
-                      const DtsBrandMark(size: 88, showWordmark: false),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Pide en tus comercios favoritos',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.inkMuted,
-                        ),
-                      ),
-                    ],
+                Text('Iniciar sesión', style: theme.textTheme.titleLarge),
+                const SizedBox(height: 20),
+                TextFormField(
+                  key: const Key('login_username'),
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Usuario',
+                    prefixIcon: Icon(Icons.person_outline),
                   ),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? 'Requerido' : null,
                 ),
-                const SizedBox(height: 36),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Iniciar sesión',
-                            style: theme.textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            key: const Key('login_username'),
-                            controller: _usernameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Usuario',
-                              prefixIcon: Icon(Icons.person_outline),
-                            ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Requerido' : null,
-                          ),
-                          const SizedBox(height: 14),
-                          TextFormField(
-                            key: const Key('login_password'),
-                            controller: _passwordController,
-                            obscureText: _obscure,
-                            decoration: InputDecoration(
-                              labelText: 'Contraseña',
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              suffixIcon: IconButton(
-                                icon: Icon(
-                                  _obscure
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                ),
-                                onPressed: () =>
-                                    setState(() => _obscure = !_obscure),
-                              ),
-                            ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Requerido' : null,
-                          ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () => context.push('/forgot-password'),
-                              child: const Text('¿Olvidaste tu contraseña?'),
-                            ),
-                          ),
-                          if (_error != null) ...[
-                            Text(
-                              _error!,
-                              style: TextStyle(color: theme.colorScheme.error),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          DtsPrimaryButton(
-                            key: const Key('login_submit'),
-                            label: 'Entrar',
-                            isLoading: _isLoading,
-                            onPressed: _submit,
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            key: const Key('login_google'),
-                            onPressed: _isLoading ? null : _signInWithGoogle,
-                            icon: const Icon(Icons.g_mobiledata, size: 28),
-                            label: const Text('Continuar con Google'),
-                          ),
-                          if (_showApple) ...[
-                            const SizedBox(height: 12),
-                            OutlinedButton.icon(
-                              key: const Key('login_apple'),
-                              onPressed: _isLoading ? null : _signInWithApple,
-                              icon: const Icon(Icons.apple),
-                              label: const Text('Continuar con Apple'),
-                            ),
-                          ],
-                        ],
+                const SizedBox(height: 14),
+                TextFormField(
+                  key: const Key('login_password'),
+                  controller: _passwordController,
+                  obscureText: _obscure,
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscure
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
                       ),
+                      onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? 'Requerido' : null,
                 ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: _isLoading ? null : () => context.go('/register'),
-                  child: Text(
-                    '¿Nuevo aquí? Crear cuenta',
-                    style: TextStyle(color: scheme.onSurface),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () => context.push('/forgot-password'),
+                    child: const Text('¿Olvidaste tu contraseña?'),
                   ),
+                ),
+                if (_error != null) ...[
+                  Text(
+                    _error!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                DtsPrimaryButton(
+                  key: const Key('login_submit'),
+                  label: 'Entrar',
+                  isLoading: _isLoading,
+                  onPressed: _submit,
+                ),
+                const SizedBox(height: 12),
+                SocialAuthButtons(
+                  enabled: !_isLoading,
+                  showApple: _showApple,
+                  onGoogle: _signInWithGoogle,
+                  onApple: _signInWithApple,
                 ),
               ],
             ),
           ),
         ),
+      ),
+      footer: TextButton(
+        onPressed: _isLoading ? null : () => context.go('/register'),
+        child: const Text('¿Nuevo aquí? Crear cuenta'),
       ),
     );
   }

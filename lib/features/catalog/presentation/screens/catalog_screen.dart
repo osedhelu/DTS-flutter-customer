@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../../cart/application/providers/cart_providers.dart';
 import '../../../shell/presentation/screens/customer_shell_screen.dart';
@@ -49,7 +48,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
               key: const Key('catalog_cart_button'),
               icon: Badge(
                 label: Text('$cartCount'),
-                backgroundColor: AppColors.coral,
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 child: const Icon(Icons.shopping_bag_outlined),
               ),
               onPressed: () => goToCart(context),

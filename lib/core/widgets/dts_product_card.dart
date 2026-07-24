@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'dts_network_image.dart';
 import 'dts_price_tag.dart';
@@ -33,11 +32,12 @@ class _DtsProductCardState extends State<DtsProductCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return AnimatedScale(
       scale: _scale,
       duration: const Duration(milliseconds: 120),
       child: Material(
-        color: AppColors.paper,
+        color: scheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
         child: InkWell(
           onTap: widget.onTap,
@@ -49,7 +49,7 @@ class _DtsProductCardState extends State<DtsProductCard> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
               border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                color: scheme.outlineVariant.withValues(alpha: 0.4),
               ),
             ),
             child: Column(
@@ -75,7 +75,7 @@ class _DtsProductCardState extends State<DtsProductCard> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.amber,
+                              color: scheme.secondaryContainer,
                               borderRadius: BorderRadius.circular(
                                 AppSpacing.radiusChip,
                               ),
@@ -83,7 +83,7 @@ class _DtsProductCardState extends State<DtsProductCard> {
                             child: Text(
                               widget.badge!,
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: AppColors.ink,
+                                color: scheme.onSecondaryContainer,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -112,17 +112,17 @@ class _DtsProductCardState extends State<DtsProductCard> {
                           Expanded(child: DtsPriceTag(amount: widget.price)),
                           if (widget.onAdd != null)
                             Material(
-                              color: theme.colorScheme.primary,
+                              color: scheme.primary,
                               borderRadius: BorderRadius.circular(12),
                               child: InkWell(
                                 onTap: widget.onAdd,
                                 borderRadius: BorderRadius.circular(12),
-                                child: const SizedBox(
+                                child: SizedBox(
                                   width: 36,
                                   height: 36,
                                   child: Icon(
                                     Icons.add_rounded,
-                                    color: Colors.white,
+                                    color: scheme.onPrimary,
                                     size: 22,
                                   ),
                                 ),

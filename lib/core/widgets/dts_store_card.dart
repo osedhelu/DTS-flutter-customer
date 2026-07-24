@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import 'dts_network_image.dart';
 import 'dts_status_chip.dart';
@@ -24,8 +23,9 @@ class DtsStoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return Material(
-      color: AppColors.paper,
+      color: scheme.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
       child: InkWell(
         onTap: isOpen ? onTap : null,
@@ -34,7 +34,7 @@ class DtsStoreCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
             border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+              color: scheme.outlineVariant.withValues(alpha: 0.45),
             ),
           ),
           child: Padding(
@@ -67,7 +67,7 @@ class DtsStoreCard extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.inkMuted,
+                            color: scheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -82,8 +82,8 @@ class DtsStoreCard extends StatelessWidget {
                 Icon(
                   Icons.chevron_right_rounded,
                   color: isOpen
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurfaceVariant,
+                      ? scheme.primary
+                      : scheme.onSurfaceVariant,
                 ),
               ],
             ),
