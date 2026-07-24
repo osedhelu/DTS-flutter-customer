@@ -40,7 +40,10 @@ class AuthRemoteDataSource {
   Future<AuthTokensDto> signInWithGoogle({required String idToken}) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/accounts/auth/google/',
-      data: {'id_token': idToken},
+      data: {
+        'id_token': idToken,
+        'role': 'customer',
+      },
     );
 
     return AuthTokensDto.fromJson(response.data!);

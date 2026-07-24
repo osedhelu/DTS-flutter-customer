@@ -17,10 +17,9 @@ class GoogleSignInUseCase {
   final FirebaseAuth _firebaseAuth;
 
   Future<AuthSession> call() async {
-    // Fuerza account chooser para evitar login silencioso con la última cuenta.
+    // Solo signOut: disconnect() en iOS suele romper el siguiente signIn.
     await _firebaseAuth.signOut();
     await _googleSignIn.signOut();
-    await _googleSignIn.disconnect().catchError((_) => null);
 
     final account = await _googleSignIn.signIn();
     if (account == null) {
@@ -28,6 +27,12 @@ class GoogleSignInUseCase {
     }
 
     final googleAuth = await account.authentication;
+    if (googleAuth.idToken == null || googleAuth.idToken!.isEmpty) {
+      throw StateError(
+        'Google no devolvió idToken. Revisa serverClientId / OAuth en Firebase.',
+      );
+    }
+
     final credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,

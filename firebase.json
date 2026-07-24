@@ -3,7 +3,7 @@
     "providers": {
       "emailPassword": true,
       "googleSignIn": {
-        "oAuthBrandDisplayName": "DTS Customer",
+        "oAuthBrandDisplayName": "DTS",
         "supportEmail": "osedhelu@gmail.com"
       }
     }

@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "dtsdrop-85330"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

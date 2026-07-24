@@ -42,9 +42,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await action();
       ref.read(postAuthServiceProvider).complete(ref);
       // No navegar aquí: setAuthenticated + redirect de GoRouter → /home.
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        setState(() => _error = 'No se pudo iniciar sesión');
+        final msg = e.toString();
+        debugPrint('Google/login error: $msg');
+        setState(() {
+          if (msg.contains('cancelado') || msg.contains('canceled')) {
+            _error = 'Inicio de sesión cancelado';
+          } else if (msg.contains('ApiException: 10') ||
+              msg.contains('DEVELOPER_ERROR')) {
+            _error =
+                'Error de configuración Google (SHA-1 / package). Revisa Firebase.';
+          } else if (msg.contains('network') ||
+              msg.contains('SocketException')) {
+            _error = 'Sin conexión. Revisa tu red e inténtalo de nuevo.';
+          } else if (msg.contains('401') ||
+              msg.contains('403') ||
+              msg.contains('Token de Firebase')) {
+            _error = 'El servidor rechazó el login con Google.';
+          } else {
+            // Mensaje corto del error real para poder diagnosticar en release.
+            final short = msg.length > 140 ? '${msg.substring(0, 140)}…' : msg;
+            _error = short.replaceFirst(RegExp(r'^Exception:\s*'), '');
+          }
+        });
       }
       return;
     } finally {
