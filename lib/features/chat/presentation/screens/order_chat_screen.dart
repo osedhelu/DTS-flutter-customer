@@ -25,6 +25,7 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
   final _messages = <Map<String, dynamic>>[];
   bool _loading = true;
   bool _sending = false;
+  bool _chatClosed = false;
   WebSocketChannel? _channel;
   StreamSubscription? _sub;
   Timer? _poll;
@@ -44,6 +45,19 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
     } else {
       _messages.add(msg);
     }
+  }
+
+  List<dynamic> _extractMessages(dynamic data) {
+    if (data is List) return data;
+    if (data is Map && data['messages'] is List) {
+      return data['messages'] as List;
+    }
+    return const [];
+  }
+
+  bool _extractClosed(dynamic data) {
+    if (data is Map && data['chat_closed'] == true) return true;
+    return false;
   }
 
   @override
@@ -75,7 +89,8 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
     try {
       final dio = ref.read(apiClientProvider).dio;
       final res = await dio.get('/orders/${widget.orderId}/messages/');
-      final list = (res.data as List).cast<dynamic>();
+      final list = _extractMessages(res.data);
+      final closed = _extractClosed(res.data);
       // #region agent log
       if (!silent) {
         agentDebugLog(
@@ -86,6 +101,7 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
             'orderId': widget.orderId,
             'count': list.length,
             'statusCode': res.statusCode,
+            'chatClosed': closed,
           },
         );
       }
@@ -98,6 +114,7 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
         for (final e in list) {
           _upsert(Map<String, dynamic>.from(e as Map));
         }
+        _chatClosed = closed;
         _loading = false;
       });
       if (!silent) _scrollToEnd();
@@ -144,32 +161,8 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
         '/ws/orders/${widget.orderId}/chat/'
         '?token=${Uri.encodeQueryComponent(token)}',
       );
-      // #region agent log
-      agentDebugLog(
-        location: 'order_chat_screen.dart:_connectWs',
-        message: 'chat ws uri built',
-        hypothesisId: 'A',
-        data: {
-          'scheme': uri.scheme,
-          'host': uri.host,
-          'port': uri.port,
-          'hasPort': uri.hasPort,
-          'path': uri.path,
-          'uriNoQuery': uri.replace(query: '').toString(),
-          'containsColonZero': uri.toString().contains(':0'),
-        },
-      );
-      // #endregion
       final channel = WebSocketChannel.connect(uri);
       await channel.ready;
-      // #region agent log
-      agentDebugLog(
-        location: 'order_chat_screen.dart:_connectWs',
-        message: 'chat ws ready ok',
-        hypothesisId: 'B',
-        data: {'orderId': widget.orderId, 'port': uri.port},
-      );
-      // #endregion
       if (!mounted) {
         await channel.sink.close();
         return;
@@ -182,7 +175,12 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
         (event) {
           try {
             final data = jsonDecode(event as String) as Map<String, dynamic>;
-            if (data.containsKey('body')) {
+            if (data['type'] == 'chat.closed') {
+              if (!mounted) return;
+              setState(() => _chatClosed = true);
+              return;
+            }
+            if (data.containsKey('body') || data['message_type'] == 'image') {
               if (!mounted) return;
               setState(() => _upsert(data));
               _scrollToEnd();
@@ -190,32 +188,12 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
           } catch (_) {}
         },
         onError: (Object err) {
-          // #region agent log
-          agentDebugLog(
-            location: 'order_chat_screen.dart:onError',
-            message: 'chat ws stream error',
-            hypothesisId: 'B',
-            data: {'error': err.toString()},
-          );
-          // #endregion
           _scheduleWsReconnect();
         },
         onDone: _scheduleWsReconnect,
         cancelOnError: true,
       );
-    } catch (e) {
-      // #region agent log
-      agentDebugLog(
-        location: 'order_chat_screen.dart:_connectWs',
-        message: 'chat ws connect failed',
-        hypothesisId: 'B',
-        data: {
-          'orderId': widget.orderId,
-          'error': e.toString(),
-          'errorType': e.runtimeType.toString(),
-        },
-      );
-      // #endregion
+    } catch (_) {
       _scheduleWsReconnect();
     }
   }
@@ -243,7 +221,7 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
 
   Future<void> _send() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _sending) return;
+    if (text.isEmpty || _sending || _chatClosed) return;
     setState(() => _sending = true);
     try {
       final dio = ref.read(apiClientProvider).dio;
@@ -255,16 +233,64 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
       if (!mounted) return;
       final msg = Map<String, dynamic>.from(res.data as Map);
       setState(() => _upsert(msg));
-      // REST es source of truth; el backend hace fan-out WS (no sink.add).
       _scrollToEnd();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo enviar')),
+        SnackBar(
+          content: Text(
+            _chatClosed
+                ? 'El chat está cerrado'
+                : 'No se pudo enviar',
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  Widget _bubble(Map<String, dynamic> m) {
+    final mine = m['sender_role'] == 'customer';
+    final imageUrl = m['image_url']?.toString() ?? '';
+    final isImage =
+        m['message_type']?.toString() == 'image' && imageUrl.isNotEmpty;
+    final body = m['body']?.toString() ?? '';
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        decoration: BoxDecoration(
+          color: mine
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isImage)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  imageUrl,
+                  width: 220,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const Text('Foto no disponible'),
+                ),
+              ),
+            if (body.isNotEmpty) ...[
+              if (isImage) const SizedBox(height: 6),
+              Text(body),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -287,57 +313,43 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
                         controller: _scroll,
                         padding: const EdgeInsets.all(12),
                         itemCount: _messages.length,
-                        itemBuilder: (_, i) {
-                          final m = _messages[i];
-                          final mine = m['sender_role'] == 'customer';
-                          return Align(
-                            alignment: mine
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: mine
-                                    ? Theme.of(context)
-                                        .colorScheme
-                                        .primaryContainer
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text('${m['body']}'),
-                            ),
-                          );
-                        },
+                        itemBuilder: (_, i) => _bubble(_messages[i]),
                       ),
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      onSubmitted: (_) => _send(),
-                      decoration: const InputDecoration(
-                        hintText: 'Escribe un mensaje…',
+          if (_chatClosed)
+            Material(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Text(
+                  'Chat cerrado — pedido entregado',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          else
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        onSubmitted: (_) => _send(),
+                        decoration: const InputDecoration(
+                          hintText: 'Escribe un mensaje…',
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: _send,
-                    icon: const Icon(Icons.send),
-                  ),
-                ],
+                    IconButton(
+                      onPressed: _send,
+                      icon: const Icon(Icons.send),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

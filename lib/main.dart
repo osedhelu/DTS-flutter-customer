@@ -95,9 +95,11 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
     final firebaseService = ref.read(firebaseServiceProvider);
     final handler = ref.read(pushNotificationHandlerProvider);
 
+    // Primero canales/permisos sin consumir el launch message; luego
+    // enganchar el router y recién entonces procesar el tap (cold start).
     await Future.wait([
       firebaseService.initialize(),
-      handler.initialize(),
+      handler.initialize(processLaunchMessages: false),
     ]);
 
     if (!mounted) return;
@@ -105,6 +107,7 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
       handler: handler,
       router: ref.read(appRouterProvider),
     );
+    await handler.consumeLaunchMessages();
 
     if (authenticated) {
       _fcmRegistration = CustomerFcmRegistration(

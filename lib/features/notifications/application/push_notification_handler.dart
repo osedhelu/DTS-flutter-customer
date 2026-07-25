@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart' show SchedulerPhase;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -20,13 +22,22 @@ class PushNotificationPayload {
   final int orderId;
   final String type;
 
-  bool get isChat => type == 'chat_message';
+  bool get isChat =>
+      type == 'chat_message' || type == 'CHAT_MESSAGE';
+
+  String get location {
+    if (orderId <= 0) return '';
+    return isChat ? '/orders/$orderId/chat' : '/tracking/$orderId';
+  }
 
   factory PushNotificationPayload.fromMessage(RemoteMessage message) {
     final data = message.data;
+    final rawType = data['type']?.toString().trim().isNotEmpty == true
+        ? data['type']!.toString().trim()
+        : (data['notification_type']?.toString().trim() ?? '');
     return PushNotificationPayload(
-      orderId: int.parse(data['order_id']?.toString() ?? '0'),
-      type: data['type']?.toString() ?? '',
+      orderId: int.tryParse(data['order_id']?.toString() ?? '') ?? 0,
+      type: rawType,
     );
   }
 }
@@ -43,17 +54,35 @@ class PushNotificationHandler {
 
   final FirebaseService _firebaseService;
   final FlutterLocalNotificationsPlugin _localNotifications;
-  final void Function(String location)? _navigate;
+  void Function(String location)? _navigate;
 
   final StreamController<PushNotificationPayload> _tapController =
       StreamController<PushNotificationPayload>.broadcast();
+
+  /// Tap ocurrido antes de que alguien escuche (cold start / race).
+  PushNotificationPayload? _pendingTap;
 
   Stream<PushNotificationPayload> get onNotificationTap => _tapController.stream;
 
   StreamSubscription<RemoteMessage>? _foregroundSub;
   StreamSubscription<RemoteMessage>? _openedSub;
 
-  Future<void> initialize() async {
+  /// Inyecta navegación directa (p. ej. `router.go`) tras montar el router.
+  void bindNavigate(void Function(String location) navigate) {
+    _navigate = navigate;
+    final pending = takePendingTap();
+    if (pending != null) {
+      _dispatch(pending);
+    }
+  }
+
+  PushNotificationPayload? takePendingTap() {
+    final pending = _pendingTap;
+    _pendingTap = null;
+    return pending;
+  }
+
+  Future<void> initialize({bool processLaunchMessages = true}) async {
     if (_isAndroid) {
       final status = await Permission.notification.status;
       if (!status.isGranted) {
@@ -109,9 +138,24 @@ class PushNotificationHandler {
     _openedSub =
         _firebaseService.onMessageOpenedApp.listen(_onMessageOpenedApp);
 
+    if (processLaunchMessages) {
+      await consumeLaunchMessages();
+    }
+  }
+
+  /// Procesa el mensaje que abrió la app (FCM o notificación local).
+  Future<void> consumeLaunchMessages() async {
     final initial = await FirebaseMessaging.instance.getInitialMessage();
     if (initial != null) {
       _onMessageOpenedApp(initial);
+    }
+
+    final launch = await _localNotifications.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp == true) {
+      final payload = launch!.notificationResponse?.payload;
+      if (payload != null && payload.isNotEmpty) {
+        _handlePayload(payload);
+      }
     }
   }
 
@@ -150,8 +194,7 @@ class PushNotificationHandler {
   }
 
   void _onMessageOpenedApp(RemoteMessage message) {
-    final payload = PushNotificationPayload.fromMessage(message);
-    _openDestination(payload);
+    _dispatch(PushNotificationPayload.fromMessage(message));
   }
 
   void handleBackgroundMessage(RemoteMessage message) {
@@ -160,26 +203,62 @@ class PushNotificationHandler {
     }
   }
 
-  void handleTap(PushNotificationPayload payload) => _openDestination(payload);
+  void handleTap(PushNotificationPayload payload) => _dispatch(payload);
 
   void _handlePayload(String encoded) {
     final parts = encoded.split('|');
     if (parts.length != 2) return;
-    _openDestination(
-      PushNotificationPayload(orderId: int.parse(parts[0]), type: parts[1]),
-    );
+    final orderId = int.tryParse(parts[0]) ?? 0;
+    _dispatch(PushNotificationPayload(orderId: orderId, type: parts[1]));
   }
 
   String _encodePayload(PushNotificationPayload payload) =>
       '${payload.orderId}|${payload.type}';
 
-  void _openDestination(PushNotificationPayload payload) {
-    _tapController.add(payload);
-    if (payload.orderId <= 0) return;
-    final location = payload.isChat
-        ? '/orders/${payload.orderId}/chat'
-        : '/tracking/${payload.orderId}';
-    _navigate?.call(location);
+  void _dispatch(PushNotificationPayload payload) {
+    if (!_tapController.isClosed) {
+      _tapController.add(payload);
+    }
+    final location = payload.location;
+    if (location.isEmpty) return;
+
+    final navigate = _navigate;
+    if (navigate != null) {
+      navigate(location);
+      return;
+    }
+    _pendingTap = payload;
+  }
+}
+
+/// Navega cuando el router ya no está en splash/login (cold start).
+void navigatePushDestination(GoRouter router, String location) {
+  if (location.isEmpty) return;
+
+  var attempts = 0;
+  void attempt() {
+    attempts++;
+    String loc = '/';
+    try {
+      loc = router.routerDelegate.currentConfiguration.uri.path;
+    } catch (_) {
+      loc = '/';
+    }
+    final waitingGate = loc == '/splash' || loc == '/login';
+    if (waitingGate && attempts < 60) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future<void>.delayed(const Duration(milliseconds: 16), attempt);
+      });
+      return;
+    }
+    router.go(location);
+  }
+
+  final binding = WidgetsBinding.instance;
+  if (binding.schedulerPhase == SchedulerPhase.idle) {
+    attempt();
+  } else {
+    binding.addPostFrameCallback((_) => attempt());
   }
 }
 
@@ -187,11 +266,8 @@ void attachPushNavigation({
   required PushNotificationHandler handler,
   required GoRouter router,
 }) {
-  handler.onNotificationTap.listen((payload) {
-    if (payload.orderId <= 0) return;
-    final location = payload.isChat
-        ? '/orders/${payload.orderId}/chat'
-        : '/tracking/${payload.orderId}';
-    router.go(location);
-  });
+  // Una sola vía: bindNavigate. El stream sigue disponible para tests/observabilidad.
+  handler.bindNavigate(
+    (location) => navigatePushDestination(router, location),
+  );
 }
