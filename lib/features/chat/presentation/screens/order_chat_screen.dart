@@ -28,6 +28,8 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
   WebSocketChannel? _channel;
   StreamSubscription? _sub;
   Timer? _poll;
+  Timer? _wsReconnect;
+  int _wsBackoffSec = 1;
 
   bool _sameId(dynamic a, dynamic b) {
     if (a == null || b == null) return false;
@@ -48,7 +50,7 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
   void initState() {
     super.initState();
     _bootstrap();
-    _poll = Timer.periodic(const Duration(seconds: 8), (_) {
+    _poll = Timer.periodic(const Duration(seconds: 2), (_) {
       if (mounted) unawaited(_loadHistory(silent: true));
     });
   }
@@ -56,6 +58,7 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
   @override
   void dispose() {
     _poll?.cancel();
+    _wsReconnect?.cancel();
     _sub?.cancel();
     _channel?.sink.close();
     _controller.dispose();
@@ -118,6 +121,7 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
   }
 
   Future<void> _connectWs() async {
+    _wsReconnect?.cancel();
     try {
       final token = await ref.read(tokenStorageProvider).getAccessToken();
       // #region agent log
@@ -132,7 +136,10 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
         },
       );
       // #endregion
-      if (token == null || token.isEmpty) return;
+      if (token == null || token.isEmpty) {
+        _scheduleWsReconnect();
+        return;
+      }
       final uri = EnvConfig.buildWsUri(
         '/ws/orders/${widget.orderId}/chat/'
         '?token=${Uri.encodeQueryComponent(token)}',
@@ -167,6 +174,9 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
         await channel.sink.close();
         return;
       }
+      _wsBackoffSec = 1;
+      await _sub?.cancel();
+      await _channel?.sink.close();
       _channel = channel;
       _sub = channel.stream.listen(
         (event) {
@@ -188,7 +198,9 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
             data: {'error': err.toString()},
           );
           // #endregion
+          _scheduleWsReconnect();
         },
+        onDone: _scheduleWsReconnect,
         cancelOnError: true,
       );
     } catch (e) {
@@ -204,7 +216,18 @@ class _OrderChatScreenState extends ConsumerState<OrderChatScreen> {
         },
       );
       // #endregion
+      _scheduleWsReconnect();
     }
+  }
+
+  void _scheduleWsReconnect() {
+    if (!mounted) return;
+    _wsReconnect?.cancel();
+    final delay = Duration(seconds: _wsBackoffSec.clamp(1, 15));
+    _wsBackoffSec = (_wsBackoffSec * 2).clamp(1, 15);
+    _wsReconnect = Timer(delay, () {
+      if (mounted) unawaited(_connectWs());
+    });
   }
 
   void _scrollToEnd() {

@@ -89,14 +89,16 @@ class PushNotificationHandler {
           'Pedidos',
           description: 'Actualizaciones de estado del pedido',
           importance: Importance.high,
+          playSound: true,
         ),
       );
       await androidPlugin?.createNotificationChannel(
         const AndroidNotificationChannel(
           'order_chat',
           'Chat de pedidos',
-          description: 'Mensajes del chat con el conductor',
-          importance: Importance.high,
+          description: 'Mensajes del chat del pedido',
+          importance: Importance.max,
+          playSound: true,
         ),
       );
     }
@@ -134,10 +136,14 @@ class PushNotificationHandler {
         android: AndroidNotificationDetails(
           isChat ? 'order_chat' : 'order_updates',
           isChat ? 'Chat de pedidos' : 'Pedidos',
-          importance: Importance.high,
+          importance: isChat ? Importance.max : Importance.high,
           priority: Priority.high,
+          playSound: true,
         ),
-        iOS: const DarwinNotificationDetails(presentSound: true),
+        iOS: const DarwinNotificationDetails(
+          presentSound: true,
+          presentAlert: true,
+        ),
       ),
       payload: _encodePayload(payload),
     );

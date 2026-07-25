@@ -54,7 +54,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final refresh = ref.watch(authRouterListenableProvider);
   ref.keepAlive();
 
+  // Keys dentro del provider: si el GoRouter se recrea, no reutilizan
+  // GlobalKeys viejos (crash "GlobalKey used multiple times" / root).
+  final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: refresh,
     redirect: (context, state) {
@@ -128,16 +133,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       final id = int.parse(state.pathParameters['orderId']!);
                       return CustomerOrderDetailScreen(orderId: id);
                     },
-                    routes: [
-                      GoRoute(
-                        path: 'chat',
-                        builder: (context, state) {
-                          final id =
-                              int.parse(state.pathParameters['orderId']!);
-                          return OrderChatScreen(orderId: id);
-                        },
-                      ),
-                    ],
                   ),
                 ],
               ),
@@ -167,12 +162,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+      // Overlay sobre el shell (evita duplicar Navigator root del indexedStack).
+      GoRoute(
+        path: '/orders/:orderId/chat',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['orderId']!);
+          return OrderChatScreen(orderId: id);
+        },
+      ),
       GoRoute(
         path: '/stores',
         redirect: (_, __) => '/home',
       ),
       GoRoute(
         path: '/stores/:storeId',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final storeId = int.parse(state.pathParameters['storeId']!);
           return StoreDetailScreen(storeId: storeId);
@@ -180,6 +185,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/stores/:storeId/catalog',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final storeId = int.parse(state.pathParameters['storeId']!);
           final storeName = state.uri.queryParameters['name'];
@@ -188,6 +194,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: 'products/:productId',
+            parentNavigatorKey: rootNavigatorKey,
             builder: (context, state) {
               final storeId = int.parse(state.pathParameters['storeId']!);
               final productId = int.parse(state.pathParameters['productId']!);
@@ -204,6 +211,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'services/:productId',
+            parentNavigatorKey: rootNavigatorKey,
             builder: (context, state) {
               final storeId = int.parse(state.pathParameters['storeId']!);
               final productId = int.parse(state.pathParameters['productId']!);
@@ -222,28 +230,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/checkout',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CheckoutScreen(),
         routes: [
           GoRoute(
             path: 'service',
+            parentNavigatorKey: rootNavigatorKey,
             builder: (context, state) => const ServiceCheckoutScreen(),
           ),
         ],
       ),
       GoRoute(
         path: '/addresses',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const AddressesScreen(),
       ),
       GoRoute(
         path: '/settings',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: '/help',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const HelpScreen(),
       ),
       GoRoute(
         path: '/tracking/:orderId',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final orderId = int.parse(state.pathParameters['orderId']!);
           return TrackingMapScreen(orderId: orderId);
@@ -251,6 +265,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/service-tracking/:orderId',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final orderId = int.parse(state.pathParameters['orderId']!);
           return ServiceOrderTrackingScreen(orderId: orderId);

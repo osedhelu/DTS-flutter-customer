@@ -141,42 +141,40 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
     }
     // #endregion
 
+    // Watch fuera del builder: un Consumer ahí puede reconstruir el árbol
+    // del Router a mitad de un push y duplicar el GlobalKey del Navigator.
+    final offline = ref.watch(connectivityOfflineProvider);
+    // #region agent log
+    if (_lastOfflineLogged != offline) {
+      _lastOfflineLogged = offline;
+      agentDebugLog(
+        location: 'main.dart:MaterialApp.builder',
+        message: 'connectivity banner toggle',
+        hypothesisId: 'H5',
+        data: {
+          'offline': offline,
+        },
+      );
+    }
+    // #endregion
+
     return MaterialApp.router(
       title: 'DTS Cliente',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
       builder: (context, child) {
-        return Consumer(
-          builder: (context, ref, _) {
-            final offline = ref.watch(connectivityOfflineProvider);
-            // #region agent log
-            if (_lastOfflineLogged != offline) {
-              _lastOfflineLogged = offline;
-              agentDebugLog(
-                location: 'main.dart:MaterialApp.builder',
-                message: 'connectivity banner toggle',
-                hypothesisId: 'H5',
-                data: {
-                  'offline': offline,
-                  'hasChild': child != null,
-                },
-              );
-            }
-            // #endregion
-            return Stack(
-              children: [
-                child ?? const SizedBox.shrink(),
-                if (offline)
-                  const Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: DtsNetworkBanner(visible: true),
-                  ),
-              ],
-            );
-          },
+        return Stack(
+          children: [
+            child ?? const SizedBox.shrink(),
+            if (offline)
+              const Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: DtsNetworkBanner(visible: true),
+              ),
+          ],
         );
       },
       routerConfig: router,
