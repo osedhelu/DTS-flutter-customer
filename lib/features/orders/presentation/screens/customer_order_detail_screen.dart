@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,18 +25,30 @@ class _CustomerOrderDetailScreenState
   bool _loading = true;
   String? _error;
   bool _busy = false;
+  Timer? _poll;
 
   @override
   void initState() {
     super.initState();
     _load();
+    _poll = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (mounted) unawaited(_load(silent: true));
+    });
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final order =
           await ref.read(ordersRepositoryProvider).getOrder(widget.orderId);
@@ -42,13 +56,16 @@ class _CustomerOrderDetailScreenState
       setState(() {
         _order = order;
         _loading = false;
+        _error = null;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = 'Pedido no encontrado';
-        _loading = false;
-      });
+      if (!silent) {
+        setState(() {
+          _error = 'Pedido no encontrado';
+          _loading = false;
+        });
+      }
     }
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,36 +16,61 @@ class CustomerOrdersScreen extends ConsumerStatefulWidget {
       _CustomerOrdersScreenState();
 }
 
-class _CustomerOrdersScreenState extends ConsumerState<CustomerOrdersScreen> {
+class _CustomerOrdersScreenState extends ConsumerState<CustomerOrdersScreen>
+    with WidgetsBindingObserver {
   List<Order> _orders = [];
   bool _loading = true;
   String? _error;
   String _filter = 'all';
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
+    _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (mounted) unawaited(_load(silent: true));
+    });
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_load(silent: true));
+    }
+  }
+
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final orders = await ref.read(ordersRepositoryProvider).listOrders();
       if (!mounted) return;
       setState(() {
         _orders = orders;
         _loading = false;
+        _error = null;
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = 'No se pudieron cargar los pedidos';
-        _loading = false;
-      });
+      if (!silent) {
+        setState(() {
+          _error = 'No se pudieron cargar los pedidos';
+          _loading = false;
+        });
+      }
     }
   }
 

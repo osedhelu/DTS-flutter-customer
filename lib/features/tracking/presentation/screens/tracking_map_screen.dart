@@ -143,15 +143,16 @@ class _TrackingMapScreenState extends ConsumerState<TrackingMapScreen> {
           if (!mounted) return;
           setState(() {
             _wsActive = true;
-            _pollTimer?.cancel();
-            _pollTimer = null;
+            // Mantener poll ligero para status/destino (C19: no congelar status).
             _tracking = TrackingData(
               orderId: update.orderId,
-              status: _tracking?.status ?? 'on_the_way',
+              status: update.orderStatus ?? _tracking?.status ?? 'on_the_way',
               driverLatitude: update.latitude,
               driverLongitude: update.longitude,
-              destinationLatitude: _tracking?.destinationLatitude,
-              destinationLongitude: _tracking?.destinationLongitude,
+              destinationLatitude: update.destinationLatitude ??
+                  _tracking?.destinationLatitude,
+              destinationLongitude: update.destinationLongitude ??
+                  _tracking?.destinationLongitude,
               updatedAt: update.recordedAt,
               isLive: true,
             );
