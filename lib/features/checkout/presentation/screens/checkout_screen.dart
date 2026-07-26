@@ -348,7 +348,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                                 (m) => RadioListTile<int>(
                                   contentPadding: EdgeInsets.zero,
                                   value: m['id'] as int,
+                                  // ignore: deprecated_member_use — RadioGroup migration pending
                                   groupValue: _selectedPaymentMethodId,
+                                  // ignore: deprecated_member_use — RadioGroup migration pending
                                   onChanged: (v) => setState(
                                     () => _selectedPaymentMethodId = v,
                                   ),

@@ -1,5 +1,4 @@
 import 'package:dts_customer/core/di/providers.dart';
-import 'package:dts_customer/features/catalog/application/providers/catalog_providers.dart';
 import 'package:dts_customer/features/catalog/domain/entities/category.dart';
 import 'package:dts_customer/features/catalog/domain/entities/product.dart';
 import 'package:dts_customer/features/catalog/domain/repositories/catalog_repository.dart';

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/providers.dart';
 import '../../../../core/widgets/widgets.dart';
-import '../../../cart/application/providers/cart_providers.dart';
 import '../../../profile/domain/entities/customer_profile.dart';
 import '../../../profile/presentation/widgets/map_address_picker.dart';
 import '../../domain/entities/order.dart';
@@ -388,7 +387,9 @@ class _ServiceCheckoutScreenState extends ConsumerState<ServiceCheckoutScreen> {
                                 (m) => RadioListTile<int>(
                                   contentPadding: EdgeInsets.zero,
                                   value: m['id'] as int,
+                                  // ignore: deprecated_member_use — RadioGroup migration pending
                                   groupValue: _selectedPaymentMethodId,
+                                  // ignore: deprecated_member_use — RadioGroup migration pending
                                   onChanged: (v) => setState(
                                     () => _selectedPaymentMethodId = v,
                                   ),

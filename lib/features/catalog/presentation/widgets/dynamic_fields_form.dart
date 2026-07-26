@@ -47,6 +47,7 @@ class _DynamicFieldsFormState extends State<DynamicFieldsForm> {
               padding: const EdgeInsets.only(bottom: 12),
               child: DropdownButtonFormField<String>(
                 decoration: InputDecoration(labelText: key),
+                // ignore: deprecated_member_use — controlled field; initialValue is uncontrolled-only
                 value: _values[key]?.toString(),
                 items: config
                     .map(

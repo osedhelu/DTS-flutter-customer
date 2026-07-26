@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../core/di/providers.dart';
-import '../../../../core/di/repository_providers.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../../domain/entities/tracking_data.dart';
 
@@ -71,7 +70,6 @@ class _TrackingMapScreenState extends ConsumerState<TrackingMapScreen> {
   TrackingData? _tracking;
   String? _error;
   bool _loading = true;
-  bool _wsActive = false;
 
   @override
   void initState() {
@@ -122,9 +120,6 @@ class _TrackingMapScreenState extends ConsumerState<TrackingMapScreen> {
     _pollTimer = null;
     await _wsSubscription?.cancel();
     _wsSubscription = null;
-    if (mounted) {
-      setState(() => _wsActive = false);
-    }
   }
 
   Future<void> _connectWebSocket() async {
@@ -142,7 +137,6 @@ class _TrackingMapScreenState extends ConsumerState<TrackingMapScreen> {
         (update) {
           if (!mounted) return;
           setState(() {
-            _wsActive = true;
             // Mantener poll ligero para status/destino (C19: no congelar status).
             _tracking = TrackingData(
               orderId: update.orderId,
@@ -162,7 +156,6 @@ class _TrackingMapScreenState extends ConsumerState<TrackingMapScreen> {
         },
         onError: (_) {
           if (!mounted) return;
-          _wsActive = false;
           if (_tracking?.shouldShowDriverLive ?? true) {
             _pollTimer ??= Timer.periodic(
               const Duration(seconds: 8),
@@ -170,14 +163,11 @@ class _TrackingMapScreenState extends ConsumerState<TrackingMapScreen> {
             );
           }
         },
-        onDone: () {
-          if (!mounted) return;
-          _wsActive = false;
-        },
+        onDone: () {},
         cancelOnError: false,
       );
     } catch (_) {
-      _wsActive = false;
+      // Fallback a polling si el WS no conecta.
     }
   }
 

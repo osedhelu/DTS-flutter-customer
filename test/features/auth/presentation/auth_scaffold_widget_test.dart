@@ -13,7 +13,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: AuthScaffold(
+        home: const AuthScaffold(
           body: ColoredBox(
             color: Colors.red,
             child: SizedBox(
@@ -21,7 +21,7 @@ void main() {
               width: double.infinity,
               child: Text(
                 'auth-body',
-                key: const Key('auth_body'),
+                key: Key('auth_body'),
               ),
             ),
           ),

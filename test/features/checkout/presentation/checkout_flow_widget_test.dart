@@ -1,5 +1,4 @@
 import 'package:dts_customer/core/di/providers.dart';
-import 'package:dts_customer/features/cart/application/providers/cart_providers.dart';
 import 'package:dts_customer/features/catalog/domain/entities/product.dart';
 import 'package:dts_customer/features/checkout/domain/entities/order.dart';
 import 'package:dts_customer/features/checkout/domain/usecases/create_order_usecase.dart';

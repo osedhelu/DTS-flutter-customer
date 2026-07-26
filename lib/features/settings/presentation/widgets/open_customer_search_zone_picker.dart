@@ -5,7 +5,6 @@ import '../../../../core/constants/location_radius_constants.dart';
 import '../../../../core/di/providers.dart';
 import '../../../profile/domain/entities/customer_profile.dart';
 import '../../../stores/application/providers/featured_products_provider.dart';
-import '../../../stores/application/providers/stores_providers.dart';
 import 'location_radius_picker.dart';
 
 Future<CustomerProfile> resolveCustomerPickerCenter(
@@ -56,6 +55,7 @@ Future<CustomerProfile?> openCustomerSearchZonePicker(
   profile ??=
       await ref.read(customerProfileRemoteDataSourceProvider).getProfile();
   final seeded = await resolveCustomerPickerCenter(ref, profile);
+  if (!context.mounted) return null;
 
   final result = await LocationRadiusPicker.show(
     context,

@@ -1,5 +1,4 @@
 import 'package:dts_customer/core/di/providers.dart';
-import 'package:dts_customer/core/di/repository_providers.dart';
 import 'package:dts_customer/core/network/token_storage.dart';
 import 'package:dts_customer/features/tracking/domain/entities/tracking_data.dart';
 import 'package:dts_customer/features/tracking/domain/entities/tracking_location_update.dart';

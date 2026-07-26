@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:dts_customer/features/cart/domain/entities/cart.dart';
 import 'package:dts_customer/features/cart/domain/usecases/add_item_usecase.dart';
 import 'package:dts_customer/features/catalog/domain/entities/product.dart';
 

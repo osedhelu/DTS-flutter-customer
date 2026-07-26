@@ -1,10 +1,8 @@
 import 'package:dts_customer/core/di/providers.dart';
-import 'package:dts_customer/features/cart/application/providers/cart_providers.dart';
 import 'package:dts_customer/features/catalog/domain/entities/product.dart';
 import 'package:dts_customer/features/checkout/domain/entities/order.dart';
 import 'package:dts_customer/features/checkout/domain/usecases/create_service_order_usecase.dart';
 import 'package:dts_customer/features/checkout/presentation/screens/service_checkout_screen.dart';
-import 'package:dts_customer/features/profile/domain/entities/customer_profile.dart';
 import 'package:dts_customer/features/profile/infrastructure/datasources/customer_profile_remote_datasource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
