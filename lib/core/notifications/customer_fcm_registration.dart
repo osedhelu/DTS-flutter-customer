@@ -16,12 +16,15 @@ class CustomerFcmRegistration {
     FirebaseMessaging? messaging,
   })  : _firebaseService = firebaseService,
         _registerFcmTokenUseCase = registerFcmTokenUseCase,
-        _messaging = messaging ?? FirebaseMessaging.instance;
+        _messagingOverride = messaging;
 
   final FirebaseService _firebaseService;
   final RegisterFcmTokenUseCase _registerFcmTokenUseCase;
-  final FirebaseMessaging _messaging;
+  final FirebaseMessaging? _messagingOverride;
   StreamSubscription<String>? _refreshSub;
+
+  FirebaseMessaging get _messaging =>
+      _messagingOverride ?? FirebaseMessaging.instance;
 
   Future<bool> register({int apnsAttempts = 10}) async {
     if (kIsWeb) return false;

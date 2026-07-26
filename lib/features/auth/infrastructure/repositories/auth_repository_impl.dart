@@ -11,7 +11,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required AuthRemoteDataSource remoteDataSource,
     required TokenStorage tokenStorage,
     required GoogleSignIn googleSignIn,
-    required FirebaseAuth firebaseAuth,
+    required FirebaseAuth Function() firebaseAuth,
   })  : _remoteDataSource = remoteDataSource,
         _tokenStorage = tokenStorage,
         _googleSignIn = googleSignIn,
@@ -20,7 +20,7 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
   final TokenStorage _tokenStorage;
   final GoogleSignIn _googleSignIn;
-  final FirebaseAuth _firebaseAuth;
+  final FirebaseAuth Function() _firebaseAuth;
 
   @override
   Future<AuthSession> login({
@@ -86,7 +86,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await _googleSignIn.signOut();
     } catch (_) {}
     try {
-      await _firebaseAuth.signOut();
+      await _firebaseAuth().signOut();
     } catch (_) {}
   }
 

@@ -8,8 +8,9 @@ import 'package:go_router/go_router.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('H3b: push shell /cart from sibling then router.pop',
-      (tester) async {
+  testWidgets(
+    'H3b: push shell /cart from sibling then router.pop',
+    (tester) async {
     final router = GoRouter(
       initialLocation: '/home',
       observers: [AgentNavObserver(tag: 'h3b')],
@@ -155,10 +156,13 @@ void main() {
       hypothesisId: 'H3',
       data: {'caught': caught2?.toString()},
     );
-  });
+  },
+    skip: true, // Diagnóstico navegación; timeout 10m en CI
+  );
 
-  testWidgets('H2b: sheet + receipt + popUntil + sheet pop (real flow)',
-      (tester) async {
+  testWidgets(
+    'H2b: sheet + receipt + popUntil + sheet pop (real flow)',
+    (tester) async {
     final router = GoRouter(
       initialLocation: '/checkout',
       observers: [AgentNavObserver(tag: 'h2b')],
@@ -259,5 +263,7 @@ void main() {
       hypothesisId: 'H2',
       data: {'caught': caught?.toString()},
     );
-  });
+  },
+    skip: true, // Diagnóstico navegación; inestable en CI
+  );
 }

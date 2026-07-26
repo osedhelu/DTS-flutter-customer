@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +28,8 @@ class PostAuthService {
 
   Future<void> _registerPushInBackground() async {
     if (kIsWeb) return;
+    // Tests / entornos sin Firebase.initializeApp.
+    if (Firebase.apps.isEmpty) return;
 
     final registration = CustomerFcmRegistration(
       firebaseService: _firebaseService,

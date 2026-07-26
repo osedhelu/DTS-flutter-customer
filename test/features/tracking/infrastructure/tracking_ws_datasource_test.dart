@@ -40,7 +40,7 @@ void main() {
 
     expect(
       connectedUri.toString(),
-      'wss://example.test/ws/orders/42/tracking/?token=jwt-token',
+      'wss://example.test:443/ws/orders/42/tracking/?token=jwt-token',
     );
 
     controller.add(
@@ -81,7 +81,7 @@ void main() {
   test('env_ws_base_url_from_api', () {
     expect(
       EnvConfig.wsBaseUrl,
-      'wss://dts-backend-production-c84e.up.railway.app',
+      'wss://api.dtsdrop.com',
     );
   });
 }

@@ -56,7 +56,8 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
     remoteDataSource: ref.watch(authRemoteDataSourceProvider),
     tokenStorage: ref.watch(tokenStorageProvider),
     googleSignIn: ref.watch(googleSignInProvider),
-    firebaseAuth: ref.watch(firebaseAuthProvider),
+    // Lazy: no tocar FirebaseAuth.instance hasta logout (tests sin Firebase.initializeApp).
+    firebaseAuth: () => ref.read(firebaseAuthProvider),
   );
 });
 

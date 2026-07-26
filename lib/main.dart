@@ -87,6 +87,8 @@ class _DtsCustomerAppState extends ConsumerState<DtsCustomerApp> {
     }
 
     if (kIsWeb) return;
+    // Widget tests mockean firebaseService pero no inicializan Firebase Core.
+    if (Firebase.apps.isEmpty) return;
 
     unawaited(_initPushStack(authenticated: auth));
   }
