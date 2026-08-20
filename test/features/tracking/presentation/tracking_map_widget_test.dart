@@ -57,6 +57,7 @@ void main() {
               required LatLng? driverPosition,
               required LatLng? destinationPosition,
               required String status,
+              List<LatLng> routePoints = const [],
             }) {
               return ColoredBox(
                 key: const Key('tracking_map_placeholder'),

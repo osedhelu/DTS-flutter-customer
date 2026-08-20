@@ -78,6 +78,58 @@ void main() {
     await sub.cancel();
   });
 
+  test('tracking_ws_parse_polyline_and_order_status', () async {
+    final controller = StreamController<dynamic>.broadcast();
+
+    final datasource = TrackingWsDataSource(
+      wsBaseUrl: 'wss://example.test',
+      connectionFactory: (uri) => _FakeWsConnection(controller),
+    );
+
+    final updates = <TrackingLocationUpdate>[];
+    final sub = datasource
+        .watchLocations(orderId: 55, accessToken: 'jwt')
+        .listen(updates.add);
+
+    controller.add(
+      jsonEncode({
+        'type': 'location',
+        'order_id': 55,
+        'latitude': 4.711,
+        'longitude': -74.0721,
+        'order_status': 'on_the_way',
+        'eta_minutes': 10,
+        'polyline': [
+          {'latitude': 4.711, 'longitude': -74.0721},
+          {'latitude': 4.70, 'longitude': -74.07},
+          {'latitude': 4.65, 'longitude': -74.08},
+        ],
+      }),
+    );
+    controller.add(
+      jsonEncode({
+        'type': 'order_status',
+        'order_id': 55,
+        'status': 'delivered',
+      }),
+    );
+
+    await Future<void>.delayed(Duration.zero);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+
+    expect(updates, hasLength(2));
+    expect(updates.first.polylinePoints, hasLength(3));
+    expect(updates.first.etaMinutes, 10);
+    expect(updates.first.orderStatus, 'on_the_way');
+    expect(updates.last.orderStatus, 'delivered');
+    // order_status conserva las últimas coordenadas conocidas.
+    expect(updates.last.latitude, 4.711);
+    expect(updates.last.longitude, -74.0721);
+
+    await datasource.disconnect();
+    await sub.cancel();
+  });
+
   test('env_ws_base_url_from_api', () {
     expect(
       EnvConfig.wsBaseUrl,

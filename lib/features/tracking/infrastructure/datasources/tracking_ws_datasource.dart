@@ -36,12 +36,13 @@ class TrackingWsDataSource {
     String? wsBaseUrl,
     TrackingWsConnectionFactory? connectionFactory,
   })  : _wsBaseUrl = wsBaseUrl ?? EnvConfig.wsBaseUrl,
-        _connectionFactory =
-            connectionFactory ?? _defaultConnectionFactory;
+        _connectionFactory = connectionFactory ?? _defaultConnectionFactory;
 
   final String _wsBaseUrl;
   final TrackingWsConnectionFactory _connectionFactory;
   TrackingWsConnection? _active;
+  double? _lastLat;
+  double? _lastLng;
 
   static TrackingWsConnection _defaultConnectionFactory(Uri uri) {
     return WebSocketTrackingConnection(WebSocketChannel.connect(uri));
@@ -58,7 +59,9 @@ class TrackingWsDataSource {
     );
   }
 
-  /// Escucha actualizaciones `type: location` del room del pedido.
+  /// Escucha actualizaciones del room del pedido:
+  /// - `type: location` → punto GPS con ruta/ETA.
+  /// - `type: order_status` → cambio de estado (posiciones previas conocidas).
   Stream<TrackingLocationUpdate> watchLocations({
     required int orderId,
     required String accessToken,
@@ -70,8 +73,27 @@ class TrackingWsDataSource {
     return connection.messages.transform(
       StreamTransformer<dynamic, TrackingLocationUpdate>.fromHandlers(
         handleData: (event, sink) {
-          final update = _parseLocation(event);
-          if (update != null) sink.add(update);
+          final json = _tryDecode(event);
+          if (json == null) return;
+
+          switch (json['type']) {
+            case 'location':
+              final update = TrackingLocationUpdate.fromJson(json);
+              _lastLat = update.latitude;
+              _lastLng = update.longitude;
+              sink.add(update);
+            case 'order_status':
+              sink.add(
+                TrackingLocationUpdate(
+                  orderId: (json['order_id'] as num?)?.toInt() ?? orderId,
+                  orderStatus: json['status']?.toString(),
+                  latitude: _lastLat,
+                  longitude: _lastLng,
+                ),
+              );
+            default:
+              break;
+          }
         },
         handleError: (error, stackTrace, sink) {
           sink.addError(error, stackTrace);
@@ -84,23 +106,22 @@ class TrackingWsDataSource {
   Future<void> disconnect() async {
     final connection = _active;
     _active = null;
+    _lastLat = null;
+    _lastLng = null;
     await connection?.close();
   }
 
-  TrackingLocationUpdate? _parseLocation(dynamic event) {
+  Map<String, dynamic>? _tryDecode(dynamic event) {
     try {
-      final Map<String, dynamic> json;
       if (event is String) {
-        json = jsonDecode(event) as Map<String, dynamic>;
+        final decoded = jsonDecode(event);
+        if (decoded is Map<String, dynamic>) return decoded;
       } else if (event is Map<String, dynamic>) {
-        json = event;
-      } else {
-        return null;
+        return event;
       }
-      if (json['type'] != 'location') return null;
-      return TrackingLocationUpdate.fromJson(json);
     } catch (_) {
       return null;
     }
+    return null;
   }
 }
