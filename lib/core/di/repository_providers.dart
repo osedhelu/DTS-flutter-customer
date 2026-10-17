@@ -15,6 +15,10 @@ import '../../features/checkout/infrastructure/repositories/orders_repository_im
 import '../../features/notifications/domain/repositories/device_token_repository.dart';
 import '../../features/notifications/infrastructure/datasources/device_token_remote_datasource.dart';
 import '../../features/notifications/infrastructure/repositories/device_token_repository_impl.dart';
+import '../../features/rides/domain/repositories/rides_repository.dart';
+import '../../features/rides/infrastructure/datasources/rides_remote_datasource.dart';
+import '../../features/rides/infrastructure/datasources/rides_ws_datasource.dart';
+import '../../features/rides/infrastructure/repositories/rides_repository_impl.dart';
 import '../../features/stores/domain/repositories/stores_repository.dart';
 import '../../features/stores/infrastructure/datasources/stores_remote_datasource.dart';
 import '../../features/stores/infrastructure/repositories/stores_repository_impl.dart';
@@ -71,7 +75,8 @@ final storesRepositoryProvider = Provider<StoresRepository>((ref) {
   );
 });
 
-final catalogRemoteDataSourceProvider = Provider<CatalogRemoteDataSource>((ref) {
+final catalogRemoteDataSourceProvider =
+    Provider<CatalogRemoteDataSource>((ref) {
   return CatalogRemoteDataSource(ref.watch(apiClientProvider).dio);
 });
 
@@ -107,6 +112,26 @@ final trackingWsDataSourceProvider = Provider<TrackingWsDataSource>((ref) {
 final trackingRepositoryProvider = Provider<TrackingRepository>((ref) {
   return TrackingRepositoryImpl(
     remoteDataSource: ref.watch(trackingRemoteDataSourceProvider),
+  );
+});
+
+final ridesRemoteDataSourceProvider = Provider<RidesRemoteDataSource>((ref) {
+  return RidesRemoteDataSource(ref.watch(apiClientProvider).dio);
+});
+
+final ridesWsDataSourceProvider = Provider<RidesWsDataSource>((ref) {
+  final datasource = RidesWsDataSource();
+  ref.onDispose(() {
+    datasource.disconnect();
+  });
+  return datasource;
+});
+
+final ridesRepositoryProvider = Provider<RidesRepository>((ref) {
+  return RidesRepositoryImpl(
+    remoteDataSource: ref.watch(ridesRemoteDataSourceProvider),
+    wsDataSource: ref.watch(ridesWsDataSourceProvider),
+    tokenStorage: ref.watch(tokenStorageProvider),
   );
 });
 

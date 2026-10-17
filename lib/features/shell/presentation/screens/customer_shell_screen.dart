@@ -7,6 +7,7 @@ import '../../../cart/application/providers/cart_providers.dart';
 import '../../../cart/presentation/screens/cart_screen.dart';
 import '../../../orders/presentation/screens/customer_orders_screen.dart';
 import '../../../profile/presentation/screens/profile_screen.dart';
+import '../../../rides/presentation/screens/rides_home_screen.dart';
 import '../../../stores/presentation/screens/store_list_screen.dart';
 
 class CustomerShellScreen extends ConsumerWidget {
@@ -28,16 +29,25 @@ class CustomerShellScreen extends ConsumerWidget {
           initialLocation: index == navigationShell.currentIndex,
         ),
         destinations: [
+          // 1. Viajes (Movilidad) — pestaña predeterminada.
           const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Inicio',
+            icon: Icon(Icons.local_taxi_outlined),
+            selectedIcon: Icon(Icons.local_taxi),
+            label: 'Viajes',
           ),
+          // 2. Tiendas (Comercio).
+          const NavigationDestination(
+            icon: Icon(Icons.storefront_outlined),
+            selectedIcon: Icon(Icons.storefront),
+            label: 'Tiendas',
+          ),
+          // 3. Pedidos (historial unificado).
           const NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long_rounded),
             label: 'Pedidos',
           ),
+          // 4. Carrito.
           NavigationDestination(
             icon: Badge(
               isLabelVisible: cartCount > 0,
@@ -53,6 +63,7 @@ class CustomerShellScreen extends ConsumerWidget {
             ),
             label: 'Carrito',
           ),
+          // 5. Perfil.
           const NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person_rounded),
@@ -62,6 +73,13 @@ class CustomerShellScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class ShellRidesScreen extends StatelessWidget {
+  const ShellRidesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => const RidesHomeScreen();
 }
 
 class ShellHomeScreen extends StatelessWidget {

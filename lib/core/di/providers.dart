@@ -15,6 +15,7 @@ import 'repository_providers.dart';
 
 export '../../features/cart/application/providers/cart_providers.dart';
 export '../../features/catalog/application/providers/catalog_providers.dart';
+export '../../features/rides/application/providers/rides_providers.dart';
 export '../../features/stores/application/providers/stores_providers.dart';
 export 'repository_providers.dart';
 
@@ -76,7 +77,8 @@ final getTrackingUseCaseProvider = Provider<GetTrackingUseCase>((ref) {
   return GetTrackingUseCase(ref.watch(trackingRepositoryProvider));
 });
 
-final registerFcmTokenUseCaseProvider = Provider<RegisterFcmTokenUseCase>((ref) {
+final registerFcmTokenUseCaseProvider =
+    Provider<RegisterFcmTokenUseCase>((ref) {
   return RegisterFcmTokenUseCase(ref.watch(deviceTokenRepositoryProvider));
 });
 
@@ -84,7 +86,8 @@ final firebaseServiceProvider = Provider<FirebaseService>((ref) {
   return FirebaseServiceImpl();
 });
 
-final pushNotificationHandlerProvider = Provider<PushNotificationHandler>((ref) {
+final pushNotificationHandlerProvider =
+    Provider<PushNotificationHandler>((ref) {
   final handler = PushNotificationHandler(
     firebaseService: ref.watch(firebaseServiceProvider),
   );

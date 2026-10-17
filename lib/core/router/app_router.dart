@@ -15,6 +15,9 @@ import '../../features/checkout/presentation/screens/service_order_tracking_scre
 import '../../features/orders/presentation/screens/customer_order_detail_screen.dart';
 import '../../features/profile/presentation/screens/addresses_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/rides/presentation/screens/ride_history_screen.dart';
+import '../../features/rides/presentation/screens/ride_quote_screen.dart';
+import '../../features/rides/presentation/screens/ride_tracking_screen.dart';
 import '../../features/settings/presentation/screens/help_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/stores/presentation/screens/store_detail_screen.dart';
@@ -22,6 +25,42 @@ import '../../features/shell/presentation/screens/customer_shell_screen.dart';
 import '../../features/tracking/presentation/screens/tracking_map_screen.dart';
 import '../di/providers.dart';
 import '../widgets/dts_brand_mark.dart';
+
+/// Ruta inicial de la app para usuarios autenticados: pestaña de Viajes
+/// (Movilidad). Es el punto de entrada por defecto del cliente.
+const String customerHomeLocation = '/rides';
+
+/// Resuelve el redirect de autenticación del router del cliente.
+///
+/// Función pura para poder testear el gate sin montar todo el [GoRouter].
+String? resolveCustomerAuthRedirect({
+  required AsyncValue<bool> auth,
+  required String loc,
+}) {
+  final isAuthGate = loc == '/splash';
+  final isPublic = isAuthGate ||
+      loc == '/login' ||
+      loc == '/register' ||
+      loc == '/forgot-password';
+
+  if (!auth.hasValue && !auth.hasError) {
+    return isAuthGate ? null : '/splash';
+  }
+  if (auth.hasError) {
+    return loc == '/login' ? null : '/login';
+  }
+
+  final isAuthenticated = auth.requireValue;
+  if (isAuthGate) {
+    return isAuthenticated ? customerHomeLocation : '/login';
+  }
+  if (!isAuthenticated && !isPublic) return '/login';
+  if (isAuthenticated &&
+      (loc == '/login' || loc == '/register' || loc == '/forgot-password')) {
+    return customerHomeLocation;
+  }
+  return null;
+}
 
 class AuthRouterListenable extends ChangeNotifier {
   AuthRouterListenable(this._ref) {
@@ -63,33 +102,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     refreshListenable: refresh,
     redirect: (context, state) {
-      final auth = ref.read(authStateProvider);
-      final loc = state.matchedLocation;
-      final isAuthGate = loc == '/splash';
-      final isPublic = isAuthGate ||
-          loc == '/login' ||
-          loc == '/register' ||
-          loc == '/forgot-password';
-
-      if (!auth.hasValue && !auth.hasError) {
-        return isAuthGate ? null : '/splash';
-      }
-      if (auth.hasError) {
-        return loc == '/login' ? null : '/login';
-      }
-
-      final isAuthenticated = auth.requireValue;
-      if (isAuthGate) {
-        return isAuthenticated ? '/home' : '/login';
-      }
-      if (!isAuthenticated && !isPublic) return '/login';
-      if (isAuthenticated &&
-          (loc == '/login' ||
-              loc == '/register' ||
-              loc == '/forgot-password')) {
-        return '/home';
-      }
-      return null;
+      return resolveCustomerAuthRedirect(
+        auth: ref.read(authStateProvider),
+        loc: state.matchedLocation,
+      );
     },
     routes: [
       GoRoute(
@@ -113,6 +129,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return CustomerShellScreen(navigationShell: navigationShell);
         },
         branches: [
+          // Rama 1: Viajes (Movilidad) — pestaña predeterminada.
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/rides',
+                builder: (context, state) => const ShellRidesScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'quote',
+                    builder: (context, state) => const RideQuoteScreen(),
+                  ),
+                  GoRoute(
+                    path: ':rideId/tracking',
+                    builder: (context, state) {
+                      final rideId = int.parse(state.pathParameters['rideId']!);
+                      return RideTrackingScreen(rideId: rideId);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'history',
+                    builder: (context, state) => const RideHistoryScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // Rama 2: Tiendas (Comercio).
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -198,8 +241,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) {
               final storeId = int.parse(state.pathParameters['storeId']!);
               final productId = int.parse(state.pathParameters['productId']!);
-              final storeName =
-                  state.extra as String? ??
+              final storeName = state.extra as String? ??
                   state.uri.queryParameters['name'] ??
                   'Comercio';
               return ProductDetailScreen(
@@ -215,8 +257,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) {
               final storeId = int.parse(state.pathParameters['storeId']!);
               final productId = int.parse(state.pathParameters['productId']!);
-              final storeName =
-                  state.extra as String? ??
+              final storeName = state.extra as String? ??
                   state.uri.queryParameters['name'] ??
                   'Comercio';
               return ServiceDetailScreen(
