@@ -16,6 +16,7 @@ class RideDto {
     this.driverId,
     this.paymentStatus = 'pending',
     this.createdAt,
+    this.encodedPolyline,
   });
 
   final int id;
@@ -29,6 +30,7 @@ class RideDto {
   final int? driverId;
   final String paymentStatus;
   final DateTime? createdAt;
+  final String? encodedPolyline;
 
   factory RideDto.fromJson(Map<String, dynamic> json) {
     return RideDto(
@@ -56,6 +58,7 @@ class RideDto {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
+      encodedPolyline: json['encoded_polyline'] as String?,
     );
   }
 
@@ -76,5 +79,6 @@ class RideDto {
         driverId: driverId,
         paymentStatus: paymentStatus,
         createdAt: createdAt,
+        encodedPolyline: encodedPolyline,
       );
 }

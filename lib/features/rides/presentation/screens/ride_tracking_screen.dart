@@ -207,6 +207,7 @@ class _RideTrackingScreenState extends ConsumerState<RideTrackingScreen> {
             dropoffPosition: destination,
             driverPosition: _driverPoint,
             onMapTap: null,
+            routePoints: ride.routePoints,
           ),
         ),
         Expanded(
@@ -217,11 +218,24 @@ class _RideTrackingScreenState extends ConsumerState<RideTrackingScreen> {
                 status: ride.status,
                 etaMinutes: _etaMinutes,
                 driverName: ride.hasDriver ? 'Tu conductor' : null,
+                pickupAddress: ride.pickup.address,
+                dropoffAddress: ride.dropoff.address,
+                distanceKm: ride.estimatedDistanceKm,
+                total: ride.total,
               ),
               if (ride.status.canCancel) ...[
                 const SizedBox(height: AppSpacing.lg),
                 OutlinedButton.icon(
                   key: const Key('cancel_ride_button'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.md,
+                    ),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
                   onPressed: _cancelling ? null : _cancelRide,
                   icon: _cancelling
                       ? const SizedBox(
@@ -233,33 +247,7 @@ class _RideTrackingScreenState extends ConsumerState<RideTrackingScreen> {
                   label: const Text('Cancelar viaje'),
                 ),
               ],
-              const SizedBox(height: AppSpacing.md),
-              _TotalRow(total: ride.total),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TotalRow extends StatelessWidget {
-  const _TotalRow({required this.total});
-
-  final double total;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('Total estimado', style: theme.textTheme.bodyMedium),
-        Text(
-          '\$${total.toStringAsFixed(2)}',
-          key: const Key('ride_total'),
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
           ),
         ),
       ],

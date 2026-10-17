@@ -1,4 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
+import '../../../../core/utils/polyline_decoder.dart';
 
 /// Desglose de tarifa de un viaje (espejo del backend `FareBreakdown`).
 class FareBreakdown extends Equatable {
@@ -34,6 +37,7 @@ class FareQuote extends Equatable {
     required this.fareBreakdown,
     required this.expiresAt,
     this.zoneName,
+    this.encodedPolyline,
   });
 
   final String quoteId;
@@ -43,7 +47,19 @@ class FareQuote extends Equatable {
   final DateTime expiresAt;
   final String? zoneName;
 
+  /// Geometría comprimida (polilínea de Google) de la ruta real Pickup →
+  /// Dropoff sobre calles, calculada por el backend. `null` si no hay
+  /// proveedor de rutas configurado.
+  final String? encodedPolyline;
+
   bool get isExpired => DateTime.now().isAfter(expiresAt);
+
+  /// Puntos decodificados de la ruta real sobre calles (vacío si no hay).
+  List<LatLng> get routePoints {
+    final encoded = encodedPolyline;
+    if (encoded == null || encoded.isEmpty) return const [];
+    return decodePolyline(encoded);
+  }
 
   @override
   List<Object?> get props => [
@@ -53,5 +69,6 @@ class FareQuote extends Equatable {
         fareBreakdown,
         expiresAt,
         zoneName,
+        encodedPolyline,
       ];
 }

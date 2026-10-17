@@ -9,6 +9,7 @@ class FareQuoteDto {
     required this.fareBreakdown,
     required this.expiresAt,
     this.zoneName,
+    this.encodedPolyline,
   });
 
   final String quoteId;
@@ -17,6 +18,7 @@ class FareQuoteDto {
   final FareBreakdown fareBreakdown;
   final DateTime expiresAt;
   final String? zoneName;
+  final String? encodedPolyline;
 
   factory FareQuoteDto.fromJson(Map<String, dynamic> json) {
     return FareQuoteDto(
@@ -29,6 +31,7 @@ class FareQuoteDto {
           ? DateTime.tryParse(json['expires_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
       zoneName: json['zone_name'] as String?,
+      encodedPolyline: json['encoded_polyline'] as String?,
     );
   }
 
@@ -65,5 +68,6 @@ class FareQuoteDto {
         fareBreakdown: fareBreakdown,
         expiresAt: expiresAt,
         zoneName: zoneName,
+        encodedPolyline: encodedPolyline,
       );
 }
