@@ -86,7 +86,8 @@ void main() {
         child: MaterialApp.router(routerConfig: router),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byKey(const Key('ride_tracking_screen')), findsOneWidget);
     expect(find.byKey(const Key('ride_status_label')), findsOneWidget);
@@ -94,9 +95,11 @@ void main() {
     expect(find.byKey(const Key('cancel_ride_button')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('cancel_ride_button')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.byKey(const Key('confirm_cancel_ride')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     verify(() => cancelRide.call(5)).called(1);
     expect(find.text('Cancelado'), findsWidgets);

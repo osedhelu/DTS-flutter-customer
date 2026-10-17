@@ -21,6 +21,7 @@ void main() {
       'driver_id': 3,
       'payment_status': 'paid',
       'created_at': '2026-07-12T21:00:00Z',
+      'encoded_polyline': 'wbw[rebcMfrJnrM',
     });
 
     final ride = dto.toEntity();
@@ -39,6 +40,10 @@ void main() {
     expect(ride.paymentStatus, 'paid');
     expect(ride.createdAt, DateTime.parse('2026-07-12T21:00:00Z'));
     expect(ride.isActive, isTrue);
+    // Ruta real sobre calles: decodifica la polyline a 2 puntos.
+    expect(ride.encodedPolyline, 'wbw[rebcMfrJnrM');
+    expect(ride.routePoints, hasLength(2));
+    expect(ride.routePoints.first.latitude, closeTo(4.711, 1e-5));
   });
 
   test('ride_dto_tolerates_missing_optional_fields_test', () {
@@ -68,6 +73,7 @@ void main() {
       },
       'expires_at': '2026-07-12T21:05:00Z',
       'zone_name': 'Centro',
+      'encoded_polyline': 'wbw[rebcMfrJnrM',
     });
 
     final quote = dto.toEntity();
@@ -83,5 +89,7 @@ void main() {
     expect(quote.fareBreakdown.total, 5.7);
     expect(quote.zoneName, 'Centro');
     expect(quote.expiresAt, DateTime.parse('2026-07-12T21:05:00Z'));
+    expect(quote.encodedPolyline, 'wbw[rebcMfrJnrM');
+    expect(quote.routePoints, hasLength(2));
   });
 }

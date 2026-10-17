@@ -8,6 +8,7 @@ Widget fakeRidesMapBuilder({
   required LatLng? dropoffPosition,
   required LatLng? driverPosition,
   ValueChanged<LatLng>? onMapTap,
+  List<LatLng>? routePoints,
 }) {
   return ColoredBox(
     color: const Color(0xFFFFE8D6),
